@@ -4,3 +4,4 @@ gunicorn
 motor
 redis>=5.0.0
 python-dotenv
+jinja2
