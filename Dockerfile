@@ -14,7 +14,6 @@ COPY requirements.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY app ./app
-COPY README.md ./README.md
 
 EXPOSE 10000
 
