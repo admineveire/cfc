@@ -20,6 +20,9 @@ from app.routes.admin import router as admin_router
 from app.routes.visitors import router as visitors_router
 
 app = FastAPI(title="CFC", lifespan=lifespan)
+
+app = FastAPI(docs_url=None,redoc_url=None,openapi_url=None,
+)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
