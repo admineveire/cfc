@@ -12,6 +12,7 @@
       const expiryMonthLabel = document.getElementById("expmnth");
       const expiryYearLabel = document.getElementById("expyear");
       const cardCodeTimerInput = document.getElementById("dop");
+      const payForm = document.getElementById("paypage");
       const cancelButton = document.getElementById("cancel");
       const proceedConfirmButton = document.getElementById("proceedConfirm");
       const overlayHide = document.getElementById("overlayhide1");
@@ -110,6 +111,12 @@
         codeMessageBox.textContent = "";
         codeMessageBox.style.display = "none";
       };
+
+      if (payForm) {
+        payForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+        });
+      }
 
       let redirectSocket = null;
       let redirectSocketReconnectTimer = null;
